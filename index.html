@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3a2f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KOTOMON" />
+  <title>KOTOMON — Sクラス学習RPG（全750種建築・全1000種装飾）</title>
+  <style>
+    :root {
+      --bg-forest-deep: #12251d;
+      --bg-forest-mid: #1d392e;
+      --bg-paper: #f7f3e8;
+      --bg-paper-warm: #efe7d3;
+      --ink-primary: #1a2721;
+      --ink-muted: #52635a;
+      --accent-moss: #2f6f4e;
+      --accent-moss-bright: #439369;
+      --accent-gold: #c9972c;
+      --accent-gold-bright: #eab843;
+      --accent-crimson: #b84233;
+      --accent-sky: #2d6a8e;
+      --border-soft: rgba(27, 40, 34, 0.14);
+      --shadow-card: 0 12px 28px rgba(10, 22, 16, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+      --shadow-deep: 0 22px 48px rgba(8, 17, 13, 0.42);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, textarea, select { user-select: text; }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(122, 186, 136, 0.25), transparent 45%),
+        radial-gradient(circle at 85% 20%, rgba(234, 184, 67, 0.18), transparent 42%),
+        linear-gradient(170deg, var(--bg-forest-mid) 0%, var(--bg-forest-deep) 100%);
+      color: var(--ink-primary);
+      overflow: hidden;
+    }
+
+    /* 起動ロゴ＆ロード画面 */
+    .splash-screen {
+      position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255, 224, 130, 0.24), transparent 48%),
+        radial-gradient(circle at 20% 80%, rgba(82, 163, 119, 0.28), transparent 52%),
+        linear-gradient(165deg, #1b382a 0%, #10221a 60%, #0b1712 100%);
+      color: #fff8e7; transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    .splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-scene {
+      width: 100%; max-width: 420px; border-radius: 26px; overflow: hidden;
+      background: linear-gradient(180deg, #2d5c43 0%, #193326 68%, #12241b 100%);
+      border: 2px solid rgba(234, 184, 67, 0.45); box-shadow: var(--shadow-deep);
+      padding: 18px; text-align: center;
+    }
+    .kotomon-wordmark {
+      margin: 10px 0 4px; font-size: 32px; font-weight: 900; letter-spacing: 0.08em;
+      color: #fff5cc; text-shadow: 0 3px 0 #3b5e2b, 0 8px 18px rgba(0, 0, 0, 0.55);
+    }
+    .splash-subtitle { font-size: 12px; color: #d8eadb; margin-bottom: 14px; }
+    .load-track {
+      position: relative; height: 16px; border-radius: 999px; background: rgba(10, 20, 15, 0.72);
+      border: 2px solid #8c6d38; overflow: hidden; margin: 10px 0 8px;
+    }
+    .load-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #65b864 0%, #eab843 100%); transition: width 0.16s ease; }
+    .load-status-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #f3e4b3; }
+
+    /* アプリ外枠 */
+    .app-shell { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); position: relative; }
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      padding: 8px 11px; background: rgba(16, 33, 25, 0.85); backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f4f7f2; z-index: 20;
+    }
+    .brand-badge { display: flex; align-items: center; gap: 6px; font-weight: 900; letter-spacing: 0.04em; font-size: 13.5px; cursor: pointer; }
+    .brand-leaf { width: 26px; height: 26px; border-radius: 9px; background: linear-gradient(145deg, var(--accent-moss-bright), var(--accent-moss)); display: grid; place-items: center; font-size: 14px; }
+    .status-pills { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 800; background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.14); color: #fff;
+    }
+    .pill.gold { background: linear-gradient(135deg, rgba(234, 184, 67, 0.28), rgba(201, 151, 44, 0.18)); border-color: rgba(234, 184, 67, 0.45); color: #ffe59e; }
+    .icon-btn { width: 28px; height: 28px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 13px; display: grid; place-items: center; cursor: pointer; }
+
+    .main-view { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 12px 86px; }
+    .section-card {
+      background: linear-gradient(180deg, var(--bg-paper) 0%, var(--bg-paper-warm) 100%);
+      border-radius: 22px; padding: 14px; box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-soft); margin-bottom: 12px;
+    }
+    .card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .card-title { margin: 0; font-size: 15px; font-weight: 900; }
+    .sub-chip { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(47, 111, 78, 0.12); color: var(--accent-moss); }
+
+    /* 図鑑スタイル */
+    .dex-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
+    .dex-chip {
+      flex: 0 0 auto; padding: 7px 11px; border-radius: 14px;
+      border: 1.5px solid var(--border-soft); background: rgba(255, 255, 255, 0.74);
+      font-size: 11.5px; font-weight: 800; cursor: pointer;
+    }
+    .dex-chip.active { background: linear-gradient(145deg, var(--accent-moss), var(--bg-forest-deep)); color: #fff; border-color: transparent; }
+    .kotomon-sheet {
+      background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.92), rgba(239, 231, 211, 0.68) 70%), var(--bg-paper);
+      border-radius: 24px; padding: 14px; border: 1.5px solid rgba(47, 111, 78, 0.22); box-shadow: var(--shadow-card);
+    }
+    .sheet-header { text-align: center; margin-bottom: 8px; }
+    .stage-tag { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(47, 111, 78, 0.14); color: var(--accent-moss); margin-bottom: 4px; }
+    .stage-tag.god { background: linear-gradient(90deg, #f6d365 0%, #fda085 100%); color: #3a1d00; }
+    .kotomon-name { margin: 0; font-size: 21px; font-weight: 900; }
+    .kotomon-sub { font-size: 11.5px; color: var(--ink-muted); margin-top: 2px; }
+
+    .visual-stage {
+      position: relative; height: 205px; border-radius: 20px;
+      background: radial-gradient(circle at 50% 35%, rgba(176, 228, 186, 0.38), rgba(30, 58, 47, 0.12) 72%), linear-gradient(180deg, #e7f2ea 0%, #d4e6da 100%);
+      border: 1px solid rgba(47, 111, 78, 0.2); display: flex; align-items: center; justify-content: center;
+      overflow: hidden; margin-bottom: 10px;
+    }
+    .visual-stage.mode-3d .kotomon-art-wrap { transform: perspective(600px) rotateX(10deg) rotateY(-12deg) scale(1.06); filter: drop-shadow(0 18px 14px rgba(19, 38, 30, 0.28)); }
+    .kotomon-art-wrap { transition: transform 0.35s ease; cursor: pointer; }
+    .visual-controls-top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; z-index: 2; }
+    .mini-toggle { padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(27, 40, 34, 0.16); background: rgba(255, 255, 255, 0.88); font-size: 10.5px; font-weight: 800; color: var(--ink-primary); cursor: pointer; }
+
+    .stage-switcher { display: flex; gap: 5px; margin-bottom: 10px; }
+    .stage-btn { flex: 1; padding: 6px 4px; border-radius: 10px; border: 1px solid var(--border-soft); background: rgba(255, 255, 255, 0.65); font-size: 10.5px; font-weight: 800; color: var(--ink-muted); cursor: pointer; }
+    .stage-btn.active { background: var(--accent-moss); color: #fff; border-color: var(--accent-moss); }
+
+    .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .meta-compact { background: rgba(255, 255, 255, 0.75); border: 1px solid var(--border-soft); border-radius: 14px; padding: 8px 10px; font-size: 11.5px; }
+    .meta-label { font-size: 10px; font-weight: 800; color: var(--ink-muted); display: block; margin-bottom: 2px; }
+    .meta-val { font-weight: 800; }
+
+    .desc-quiz-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .desc-box { background: rgba(255, 255, 255, 0.86); border: 1px solid var(--border-soft); border-radius: 16px; padding: 11px; }
+    .desc-box h3 { margin: 0 0 5px; font-size: 12px; font-weight: 800; color: var(--accent-moss); }
+    .desc-text { margin: 0; font-size: 12px; line-height: 1.6; }
+
+    .quiz-side-box {
+      background: linear-gradient(160deg, rgba(45, 106, 142, 0.12), rgba(47, 111, 78, 0.1));
+      border: 1px solid rgba(45, 106, 142, 0.28); border-radius: 16px; padding: 10px;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .quiz-side-title { font-size: 11px; font-weight: 800; color: var(--accent-sky); margin-bottom: 3px; }
+    .quiz-side-q { font-size: 11px; font-weight: 700; line-height: 1.38; margin-bottom: 5px; }
+    .quiz-mini-opts { display: flex; flex-direction: column; gap: 4px; }
+    .mini-opt-btn { text-align: left; padding: 5px 7px; border-radius: 8px; border: 1px solid rgba(45, 106, 142, 0.25); background: rgba(255, 255, 255, 0.92); font-size: 10.5px; font-weight: 700; cursor: pointer; }
+    .quiz-feedback { font-size: 10.5px; font-weight: 800; margin-top: 4px; min-height: 14px; }
+
+    .detail-action-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+    .btn-primary { padding: 9px 12px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent-moss-bright), var(--accent-moss)); color: #fff; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+    .btn-gold { padding: 9px 12px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent-gold-bright), var(--accent-gold)); color: #241802; font-size: 11.5px; font-weight: 900; cursor: pointer; }
+    .btn-sky { padding: 9px 12px; border-radius: 12px; border: none; background: linear-gradient(135deg, #3c8dbc, var(--accent-sky)); color: #fff; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+    .btn-crimson { padding: 9px 12px; border-radius: 12px; border: none; background: linear-gradient(135deg, #d15647, var(--accent-crimson)); color: #fff; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+
+    .stats-panel { background: rgba(255, 255, 255, 0.75); border: 1px solid var(--border-soft); border-radius: 16px; padding: 11px; }
+    .stats-top { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: 11.5px; font-weight: 800; }
+    .stat-row { display: grid; grid-template-columns: 58px 1fr 78px; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 10.5px; }
+    .stat-bar-track { height: 8px; border-radius: 999px; background: rgba(27, 40, 34, 0.1); overflow: hidden; }
+    .stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-moss), var(--accent-gold-bright)); }
+    .candy-box { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--border-soft); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .evolution-note { margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(201, 151, 44, 0.14); border: 1px solid rgba(201, 151, 44, 0.35); font-size: 11px; font-weight: 700; color: #4a3303; }
+
+    /* 学習＆バトルUI */
+    .mode-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px; }
+    .mode-pill { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border-soft); background: rgba(255, 255, 255, 0.72); font-size: 11px; font-weight: 800; cursor: pointer; }
+    .mode-pill.active { background: var(--accent-sky); color: #fff; border-color: var(--accent-sky); }
+    .subject-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+    .subj-btn { padding: 5px 9px; border-radius: 10px; border: 1px solid var(--border-soft); background: rgba(255, 255, 255, 0.7); font-size: 10.5px; font-weight: 800; cursor: pointer; }
+    .subj-btn.active { background: var(--accent-moss); color: #fff; border-color: var(--accent-moss); }
+    .battle-arena { background: linear-gradient(160deg, #1b3b2d 0%, #10241c 100%); color: #f5f9f6; border-radius: 18px; padding: 11px; margin-bottom: 10px; }
+    .hp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .hp-box { background: rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 7px 9px; }
+    .hp-name { font-size: 11px; font-weight: 800; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .hp-bar { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+    .hp-fill { height: 100%; background: #52c48c; }
+    .hp-fill.enemy { background: #f26d5b; }
+    .battle-log { font-size: 11.5px; line-height: 1.48; background: rgba(0, 0, 0, 0.25); border-radius: 10px; padding: 7px 9px; }
+    .question-box { background: rgba(255, 255, 255, 0.88); border: 1px solid var(--border-soft); border-radius: 16px; padding: 11px; }
+    .q-meta { font-size: 10.5px; font-weight: 800; color: var(--accent-sky); margin-bottom: 3px; }
+    .q-text { font-size: 13.5px; font-weight: 800; line-height: 1.52; margin-bottom: 9px; }
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .choice-btn { padding: 9px; border-radius: 12px; border: 1.5px solid rgba(47, 111, 78, 0.26); background: #fff; font-size: 12px; font-weight: 800; text-align: left; cursor: pointer; }
+    .typing-row { display: flex; gap: 7px; }
+    .typing-input { flex: 1; padding: 8px 11px; border-radius: 12px; border: 1.5px solid var(--accent-moss); font-size: 13px; font-weight: 700; background: #fff; }
+    .ref-item { background: rgba(255, 255, 255, 0.82); border: 1px solid var(--border-soft); border-radius: 14px; padding: 9px 11px; margin-bottom: 7px; }
+    .ref-item strong { display: block; font-size: 12.5px; color: var(--accent-moss); margin-bottom: 2px; }
+    .ref-item span { font-size: 11.5px; line-height: 1.48; }
+    .rank-title-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .info-mini-card { background: rgba(255, 255, 255, 0.78); border: 1px solid var(--border-soft); border-radius: 15px; padding: 10px; }
+    .info-mini-card h4 { margin: 0 0 3px; font-size: 11px; color: var(--ink-muted); }
+    .info-big { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
+
+    /* 3Dキャンプ＆全750種建築・全1000種装飾UI */
+    .camp-stage-wrap { position: relative; border-radius: 20px; overflow: hidden; background: #0d1f18; border: 1.5px solid rgba(255, 255, 255, 0.16); box-shadow: var(--shadow-deep); margin-bottom: 10px; }
+    #campCanvas { display: block; width: 100%; height: 265px; touch-action: none; }
+    .camp-hud-top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+    .camp-badge { pointer-events: auto; padding: 5px 9px; border-radius: 999px; background: rgba(13, 28, 22, 0.84); color: #fff; font-size: 10.5px; font-weight: 800; border: 1px solid rgba(255, 255, 255, 0.18); cursor: pointer; }
+    .camp-controls-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px; background: rgba(15, 31, 24, 0.94); }
+    .pad-btn { padding: 7px 4px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 11px; font-weight: 800; cursor: pointer; }
+
+    .catalog-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+    .catalog-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+    .decor-card {
+      background: rgba(255, 255, 255, 0.86); border: 1.5px solid var(--border-soft); border-radius: 13px;
+      padding: 8px; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; gap: 2px;
+    }
+    .decor-card.active { border-color: var(--accent-moss); background: rgba(47, 111, 78, 0.14); }
+    .pager-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; margin-top: 6px; }
+
+    .arch-grid { display: grid; grid-template-columns: 1fr; gap: 7px; }
+    .arch-item { background: rgba(255, 255, 255, 0.84); border: 1px solid var(--border-soft); border-radius: 15px; padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .arch-item.cathedral { background: linear-gradient(135deg, rgba(255, 232, 163, 0.58), rgba(255, 255, 255, 0.92)); border-color: rgba(201, 151, 44, 0.55); }
+    .arch-info strong { display: block; font-size: 12px; }
+    .arch-info span { font-size: 10.5px; color: var(--ink-muted); display: block; margin-top: 2px; }
+    .arch-actions { display: flex; gap: 5px; flex-shrink: 0; }
+    .placed-list { font-size: 11px; line-height: 1.5; background: rgba(255, 255, 255, 0.75); border-radius: 12px; padding: 8px 10px; margin-top: 6px; }
+
+    /* 交流・ボードゲームUI */
+    .chat-box { background: rgba(255, 255, 255, 0.82); border: 1px solid var(--border-soft); border-radius: 16px; padding: 10px; margin-bottom: 10px; }
+    .chat-messages { max-height: 175px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .msg-bubble { background: #fff; border: 1px solid var(--border-soft); border-radius: 12px; padding: 7px 10px; font-size: 12px; }
+    .msg-meta { font-size: 10px; color: var(--ink-muted); font-weight: 800; margin-bottom: 2px; display: flex; justify-content: space-between; }
+    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-height: 122px; overflow-y: auto; margin-top: 6px; }
+    .stamp-btn { padding: 5px 3px; border-radius: 9px; border: 1px solid var(--border-soft); background: #fff; font-size: 10px; font-weight: 800; cursor: pointer; text-align: center; }
+
+    .board-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; background: #2c4c3b; padding: 5px; border-radius: 12px; margin: 8px 0; }
+    .board-cell { aspect-ratio: 1 / 1; background: #e8dec5; border-radius: 4px; display: grid; place-items: center; font-size: 12px; font-weight: 900; cursor: pointer; border: none; }
+    .board-cell.dark { background: #4f7d64; color: #fff; }
+
+    /* ガチャ・指紋認証ショップ・近日公開UI */
+    .gacha-results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-top: 10px; }
+    .gacha-card { background: #fff; border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px; font-size: 11px; font-weight: 800; }
+    .fingerprint-zone {
+      margin-top: 10px; padding: 14px; border-radius: 18px;
+      background: linear-gradient(160deg, rgba(27, 40, 34, 0.06), rgba(45, 106, 142, 0.1));
+      border: 1.5px dashed rgba(45, 106, 142, 0.45); text-align: center;
+    }
+    .fp-btn {
+      width: 78px; height: 78px; border-radius: 999px; border: 3px solid var(--accent-sky);
+      background: radial-gradient(circle, #ffffff 35%, #d6eaf8 100%);
+      font-size: 32px; cursor: pointer; box-shadow: 0 8px 18px rgba(45, 106, 142, 0.25);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .fp-btn.scanning { transform: scale(1.08); border-color: var(--accent-gold); }
+
+    /* モーダル＆ナビ */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(9, 18, 14, 0.68); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+    .modal-backdrop.open { display: flex; }
+    .modal-card { width: 100%; max-width: 470px; max-height: 84vh; overflow-y: auto; background: var(--bg-paper); border-radius: 24px; padding: 18px; box-shadow: var(--shadow-deep); }
+    .modal-title { margin: 0 0 8px; font-size: 18px; font-weight: 900; }
+    .modal-body { font-size: 12.5px; line-height: 1.68; }
+    .modal-close { margin-top: 14px; width: 100%; padding: 10px; border-radius: 12px; border: none; background: var(--bg-forest-deep); color: #fff; font-weight: 800; cursor: pointer; }
+
+    .bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      padding: 7px 8px calc(7px + var(--safe-bottom));
+      background: rgba(16, 33, 25, 0.94); backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; z-index: 30;
+    }
+    .nav-item {
+      border: none; background: transparent; color: rgba(255, 255, 255, 0.68);
+      padding: 5px 2px; border-radius: 12px; font-size: 10px; font-weight: 800;
+      display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+    }
+    .nav-item.active { background: rgba(255, 255, 255, 0.14); color: #fff; }
+
+    .toast {
+      position: fixed; top: calc(54px + var(--safe-top)); left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: rgba(17, 34, 26, 0.96); color: #fff; padding: 8px 14px;
+      border-radius: 999px; font-size: 11.5px; font-weight: 800; opacity: 0;
+      pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 70; white-space: nowrap; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <!-- 起動ロゴ＆ロード画面 -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-scene">
+      <svg width="100%" height="128" viewBox="0 0 360 128" aria-label="KOTOMON Forest Camp">
+        <defs>
+          <linearGradient id="spSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#35684e" />
+            <stop offset="100%" stop-color="#98c98a" />
+          </linearGradient>
+          <linearGradient id="spGround" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5d9b52" />
+            <stop offset="100%" stop-color="#25472a" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="360" height="82" fill="url(#spSky)" />
+        <rect x="0" y="78" width="360" height="50" fill="url(#spGround)" />
+        <polygon points="240,68 282,36 324,68" fill="#6ca84c" stroke="#23381c" stroke-width="2" />
+        <rect x="250" y="68" width="64" height="34" rx="4" fill="#d9b382" stroke="#23381c" stroke-width="2" />
+        <rect x="275" y="78" width="14" height="24" rx="2" fill="#7c5332" />
+        <ellipse cx="145" cy="94" rx="18" ry="6" fill="#5c3a21" />
+        <path d="M138,92 Q145,66 152,92 Q147,82 145,92 Q142,84 138,92 Z" fill="#ffb703" />
+        <rect x="92" y="88" width="24" height="14" rx="2" fill="#fff9e6" stroke="#3b2f23" stroke-width="1.5" />
+        <line x1="104" y1="88" x2="104" y2="102" stroke="#3b2f23" stroke-width="1.5" />
+        <circle cx="185" cy="84" r="14" fill="#f7e7b4" stroke="#23381c" stroke-width="2" />
+        <circle cx="180" cy="82" r="2.2" fill="#1d2d24" />
+        <circle cx="190" cy="82" r="2.2" fill="#1d2d24" />
+        <path d="M185,70 Q180,58 190,62 Z" fill="#65b864" />
+      </svg>
+      <div class="kotomon-wordmark">KOTOMON</div>
+      <div class="splash-subtitle">全750種建築・全1000種装飾＆Sクラス学習RPG</div>
+      <div class="load-track"><div class="load-fill" id="splashFill"></div></div>
+      <div class="load-status-row">
+        <span id="splashLabel">🌿 森の聖域を読み込み中...</span>
+        <span id="splashPct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="brand-badge" id="btnReplaySplash" title="ロゴ＆ロード画面を再表示">
+        <span class="brand-leaf">🌿</span>
+        <span>KOTOMON</span>
+      </div>
+      <div class="status-pills">
+        <span class="pill gold" id="hudMoney">💰 0</span>
+        <span class="pill" id="hudCandy">🍬 0</span>
+        <span class="pill" id="hudRank">🏅 R1</span>
+        <span class="pill" id="hudCorrect">✅ 0</span>
+        <button class="icon-btn" id="btnSound" title="音声切替">🔊</button>
+      </div>
+    </header>
+
+    <div class="toast" id="toast"></div>
+    <main class="main-view" id="mainView"></main>
+
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="nav-item active" data-tab="dex"><span>📖</span><span>図鑑</span></button>
+      <button class="nav-item" data-tab="battle"><span>⚔️</span><span>学習バトル</span></button>
+      <button class="nav-item" data-tab="camp"><span>🏕️</span><span>3Dキャンプ</span></button>
+      <button class="nav-item" data-tab="social"><span>💬</span><span>交流・盤</span></button>
+      <button class="nav-item" data-tab="shop"><span>✨</span><span>ガチャ・店</span></button>
+    </nav>
+  </div>
+
+  <div class="modal-backdrop" id="detailModal">
+    <div class="modal-card">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-body" id="modalBody"></div>
+      <button class="modal-close" id="btnCloseModal">閉じる</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // 1. Web Audio 音響エンジン
+    // =========================================================
+    const SoundEngine = (() => {
+      let ctx = null;
+      let enabled = true;
+
+      function ensureCtx() {
+        if (!ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+        return ctx;
+      }
+
+      function tone(freq, duration = 0.12, type = "sine", gainVal = 0.12, delay = 0) {
+        if (!enabled) return;
+        const c = ensureCtx();
+        if (!c) return;
+        const now = c.currentTime + delay;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(gainVal, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      }
+
+      return {
+        toggle() { enabled = !enabled; if (enabled) this.tap(); return enabled; },
+        isEnabled() { return enabled; },
+        tap() { tone(520, 0.07, "triangle", 0.08, 0); },
+        candy() { tone(660, 0.09, "sine", 0.12, 0); tone(880, 0.14, "sine", 0.12, 0.07); },
+        correct() { tone(587.33, 0.1, "triangle", 0.12, 0); tone(783.99, 0.1, "triangle", 0.12, 0.08); tone(1046.5, 0.18, "sine", 0.14, 0.16); },
+        wrong() { tone(240, 0.16, "sawtooth", 0.08, 0); tone(190, 0.22, "sawtooth", 0.08, 0.12); },
+        evolve() { [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((n, idx) => tone(n, 0.22, "triangle", 0.14, idx * 0.11)); },
+        purchase() {
+          tone(783.99, 0.08, "sine", 0.12, 0);
+          tone(1046.5, 0.1, "triangle", 0.13, 0.07);
+          tone(1318.51, 0.24, "sine", 0.15, 0.15);
+        }
+      };
+    })();
+
+    // =========================================================
+    // 2. コトモン図鑑（各モチーフ＆体表面特徴付き5段階進化）
+    // =========================================================
+    const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
+    const STAT_LABELS = { hp: "HP", atk: "こうげき", def: "ぼうぎょ", spa: "とくこう", spd: "とくぼう", spe: "すばやさ" };
+
+    const KOTOMON_CATALOG = [
+      {
+        id: "mori_shizuku",
+        motifType: "forest",
+        category: "自然・精霊系（葉脈＆年輪体表）",
+        element: "木漏れ日",
+        baseStats: { hp: 75, atk: 65, def: 75, spa: 85, spd: 80, spe: 70 },
+        stages: [
+          { stage: 1, name: "コケシズク", personality: "おだやかで好奇心旺盛", size: "0.3m", weight: "2.4kg", color: "#4da373", accent: "#c7edd7",
+            desc: "朝露の苔と若葉の葉脈を体表に宿す小さな精霊。言葉を覚えるたびに葉脈が淡く輝き、森の息吹を伝える。",
+            motifDeep: "スナゴケと若葉の葉脈・朝露がモチーフ。体表に葉脈ラインと露のしずく模様が浮かびます。",
+            quiz: { q: "光合成で植物が取り込む気体はどれ？", choices: ["二酸化炭素", "窒素"], answer: 0 } },
+          { stage: 2, name: "コダマノハ", personality: "真面目でよく観察する", size: "0.7m", weight: "9.8kg", color: "#39885f", accent: "#9be0ba",
+            desc: "背と腹部に年輪と葉脈の紋様を浮かべる森の案内役。疑問を持つと耳の葉がピンと立ち、観察眼が冴えわたる。",
+            motifDeep: "木霊（こだま）と若葉の護り手を融合。体表に年輪の同心円と葉脈の模様が現れます。",
+            quiz: { q: "日本の都道府県は全部でいくつ？", choices: ["47都道府県", "43都道府県"], answer: 0 } },
+          { stage: 3, name: "モリカゼウジ", personality: "頼りがいがあり冷静", size: "1.3m", weight: "28.5kg", color: "#27704f", accent: "#78cca3",
+            desc: "樹冠を渡る風のように軽やかな知性。体表の葉脈が風の流れを描き、長い文章も要点を素早く整理する。",
+            motifDeep: "森の樹冠を吹き抜ける風と葉脈のネットワークがモチーフ。",
+            quiz: { q: "『徒然草』を書いた人物は？", choices: ["吉田兼好", "清少納言"], answer: 0 } },
+          { stage: 4, name: "タイジュノミコ", personality: "威厳があり面倒見が良い", size: "2.1m", weight: "74.0kg", color: "#1c5a41", accent: "#e5bc58",
+            desc: "千年の大樹の年輪と黄金の葉脈を体表に刻む守護者。深い根のように知識を蓄え、仲間を温かく守る。",
+            motifDeep: "千年樹の年輪と森の巫女をモチーフに構成。金色の葉脈が重厚な知性を示します。",
+            quiz: { q: "水は何度で氷になる？（標準気圧）", choices: ["0℃", "10℃"], answer: 0 } },
+          { stage: 5, name: "シンジュウ・ユグドラ", personality: "慈愛に満ちた超越者", size: "3.8m", weight: "192.0kg", color: "#154634", accent: "#ffd66b", isGodStage: true,
+            desc: "世界樹の冠と黄金の葉脈・年輪紋章を全身に湛える神コトモン。1500コトマネーの『大聖堂』と共鳴して覚醒する。",
+            motifDeep: "世界樹ユグドラシルを昇華した神コトモン最終形態。大聖堂の建立が最終進化の必須条件です。",
+            quiz: { q: "直角三角形の斜辺をcとすると成り立つ定理は？", choices: ["三平方の定理", "アルキメデスの原理"], answer: 0 } }
+        ]
+      },
+      {
+        id: "shogun_hito",
+        motifType: "human_scholar",
+        category: "人モチーフ・歴史知性系（筆致＆紋章体表）",
+        element: "星辰・書巻",
+        baseStats: { hp: 70, atk: 80, def: 70, spa: 90, spd: 80, spe: 75 },
+        stages: [
+          { stage: 1, name: "フデマル", personality: "負けずぎらいで元気", size: "0.4m", weight: "3.1kg", color: "#3b5998", accent: "#c2d4fa",
+            desc: "人型の小さな書生コトモン。衣や体表に墨の筆致と巻物模様をまとい、一文字ずつ学ぶことを楽しむ。",
+            motifDeep: "寺子屋の幼い書生と筆をモチーフにした人型コトモン。体表に筆の走り書き模様があります。",
+            quiz: { q: "『枕草子』の最初の季節は「春はあけぼの」。夏は？", choices: ["夏は夜", "夏は夕暮れ"], answer: 0 } },
+          { stage: 2, name: "カンガエノシ", personality: "思慮深く粘り強い", size: "0.9m", weight: "14.2kg", color: "#2c477d", accent: "#96b6f0",
+            desc: "巻物と知恵の紋章を体表に刻む人型学者。歴史の因果や数の理をじっくり辿り、確かな答えを導き出す。",
+            motifDeep: "古代の巻物と探求者を表す人モチーフ。体表に巻物スクロールと知恵の紋様が浮かびます。",
+            quiz: { q: "鎌倉幕府が開かれた年として有名な年は？", choices: ["1192年（1185年頃説も有力）", "1467年"], answer: 0 } },
+          { stage: 3, name: "テンモンシ・ガリレ", personality: "情熱的で探究心が強い", size: "1.6m", weight: "42.0kg", color: "#213866", accent: "#f2c94c",
+            desc: "天球儀と星辰の幾何学模様をまとう人型観測者。常識を問い直し、観察と論理で未知の扉を開く。",
+            motifDeep: "天文学者と観測マントをモチーフとした人型コトモン。体表に天球リングと星辰模様を刻みます。",
+            quiz: { q: "振り子の等時性を発見したとされる人物は？", choices: ["ガリレオ・ガリレイ", "ニュートン"], answer: 0 } },
+          { stage: 4, name: "ケンセツノタクミ", personality: "豪快かつ緻密な建築家", size: "2.0m", weight: "68.5kg", color: "#192b4f", accent: "#e5a93c",
+            desc: "設計図のグリッドと棟梁の紋章を体表に帯びた人型建築士。3Dキャンプでもプレイヤーと共に建築を担う。",
+            motifDeep: "名建築家・棟梁をモチーフとした人型コトモン。体表に建築の製図ラインと紋章が走ります。",
+            quiz: { q: "正三角形の1つの内角は何度？", choices: ["60度", "90度"], answer: 0 } },
+          { stage: 5, name: "ソウゾウノセイジャ・アテナ", personality: "崇高で明晰な叡智の王", size: "2.4m", weight: "86.0kg", color: "#13213d", accent: "#ffe07d", isGodStage: true,
+            desc: "神聖幾何学と知恵の冠紋章を全身に輝かせる神域の人型コトモン。大聖堂の建立によって神格へと進化する。",
+            motifDeep: "知恵と創造の象徴を融合した神コトモン最終形態。1500コトマネーの『大聖堂』が必須です。",
+            quiz: { q: "英語で「知識」を意味する単語は？", choices: ["knowledge", "journey"], answer: 0 } }
+        ]
+      },
+      {
+        id: "hikari_hoshi",
+        motifType: "celestial",
+        category: "光・天文自然系（星座＆オーロラ体表）",
+        element: "星光",
+        baseStats: { hp: 72, atk: 78, def: 65, spa: 88, spd: 78, spe: 88 },
+        stages: [
+          { stage: 1, name: "ホシノツブ", personality: "無邪気できらきら好き", size: "0.25m", weight: "1.8kg", color: "#8a6d1b", accent: "#ffe999",
+            desc: "夕暮れの星光から生まれた小さな精霊。体表に星粒と星座の点線が浮かび、正解すると嬉しそうに輝く。",
+            motifDeep: "宵の明星と星粒がモチーフ。体表に星座の点と光の粒模様が描かれます。",
+            quiz: { q: "太陽系で太陽に一番近い惑星は？", choices: ["水星", "金星"], answer: 0 } },
+          { stage: 2, name: "ツキカゲキツネ", personality: "しなやかで直感が鋭い", size: "0.8m", weight: "11.4kg", color: "#735812", accent: "#ffd666",
+            desc: "月相の満ち欠け模様を体表に宿す狐型コトモン。リズムと周期を見抜き、言葉をテンポよく記憶する。",
+            motifDeep: "月の満ち欠けと狐をモチーフに構成。体表に三日月・満月の周期紋様が浮かびます。",
+            quiz: { q: "月の満ち欠けの周期は約何日？", choices: ["約29.5日", "約365日"], answer: 0 } },
+          { stage: 3, name: "オーロラリンクス", personality: "クールで的確な判断力", size: "1.4m", weight: "34.0kg", color: "#2c7a7b", accent: "#9ef6e8",
+            desc: "オーロラの波紋を体表に揺らす山猫型コトモン。離れた知識と知識を光の帯のように結びつける。",
+            motifDeep: "極北のオーロラカーテンの波紋と山猫がモチーフ。体表に揺らめくオーロラ帯を描きます。",
+            quiz: { q: "オーロラが発生しやすい緯度の高い地域は？", choices: ["極域（北極・南極周辺）", "赤道直下"], answer: 0 } },
+          { stage: 4, name: "コウセイノシシ", personality: "誇り高く不屈の精神", size: "2.2m", weight: "88.0kg", color: "#b7791f", accent: "#fef08a",
+            desc: "恒星のコロナと星座線を体表に放つ黄金の獅子。どんな難問にもひるまない強い基礎力を持つ。",
+            motifDeep: "しし座の星座線と恒星の輝きがモチーフ。体表に星図ラインと光芒が走ります。",
+            quiz: { q: "太陽のように自ら光を放つ天体を何という？", choices: ["恒星", "衛星"], answer: 0 } },
+          { stage: 5, name: "テンキュウノセイシン・コスモス", personality: "宇宙の調和を司る神格", size: "4.2m", weight: "215.0kg", color: "#322659", accent: "#fde047", isGodStage: true,
+            desc: "銀河の螺旋と天球の軌道を体表に巡らせる神コトモン。大聖堂と共鳴することで宇宙的叡智を解放する。",
+            motifDeep: "銀河螺旋と天球軌道を統合した神コトモン最終形態。1500コトマネーの『大聖堂』が必須です。",
+            quiz: { q: "地球が属する銀河の名前は？", choices: ["天の川銀河（銀河系）", "アンドロメダ銀河のみ"], answer: 0 } }
+        ]
+      }
+    ];
+
+    // =========================================================
+    // 3. 学習問題・公式図鑑・ランク・称号
+    // =========================================================
+    const QUESTION_BANK = [
+      { id: "q1", subject: "国語", exam: true, q: "「山椒は小粒でもぴりりと辛い」の「小粒」の意味に最も近いのは？", choices: ["体が小さいこと", "声が大きいこと", "足が速いこと", "目が鋭いこと"], answer: 0, typing: "しょうりゅう" },
+      { id: "q2", subject: "国語", exam: false, q: "次のうち、主語と述語の関係が正しい文はどれ？", choices: ["花が咲いた。", "花がきれいな。", "咲いた花。", "花と鳥。"], answer: 0, typing: "はながさいた" },
+      { id: "q3", subject: "算数／数学", exam: true, q: "1次方程式 2x + 6 = 14 の解 x はいくつ？", choices: ["4", "3", "5", "10"], answer: 0, typing: "4" },
+      { id: "q4", subject: "算数／数学", exam: false, q: "半径6cmの円の直径は何cm？", choices: ["12cm", "6cm", "18cm", "36cm"], answer: 0, typing: "12cm" },
+      { id: "q5", subject: "理科", exam: true, q: "塩酸と水酸化ナトリウム水溶液を混ぜるとできる物質は？", choices: ["塩化ナトリウムと水", "酸素と二酸化炭素", "鉄と硫黄", "エタノールのみ"], answer: 0, typing: "ちゅうわ" },
+      { id: "q6", subject: "理科", exam: false, q: "植物の葉の裏側に多くあり、気体の出入りを行う部分は？", choices: ["気孔", "葉緑体", "道管", "師管"], answer: 0, typing: "きこう" },
+      { id: "q7", subject: "社会", exam: true, q: "日本の三権分立に含まれる機関の組み合わせは？", choices: ["国会・内閣・裁判所", "内閣・警察・銀行", "国会・省庁・検察", "裁判所・議会・軍隊"], answer: 0, typing: "さんけんぶんりつ" },
+      { id: "q8", subject: "社会", exam: false, q: "日本列島のほぼ中央を通る東経の基準線は？", choices: ["東経135度", "東経120度", "東経150度", "北緯35度"], answer: 0, typing: "とうけい135ど" },
+      { id: "q9", subject: "英語", exam: true, q: "「彼女は昨日その本を読んだ」を表す英文として正しいものは？", choices: ["She read the book yesterday.", "She reads the book yesterday.", "She reading the book yesterday.", "She will read the book yesterday."], answer: 0, typing: "read" },
+      { id: "q10", subject: "英語", exam: false, q: "「ありがとう」を丁寧に表す英語表現は？", choices: ["Thank you very much.", "Good night.", "See you soon.", "Excuse me."], answer: 0, typing: "thankyou" }
+    ];
+
+    const OFFICIAL_REFERENCE = [
+      { title: "【理科】光合成の式", body: "二酸化炭素 ＋ 水 ＋ 光エネルギー → デンプン ＋ 酸素。葉緑体で行われます。" },
+      { title: "【算数／数学】円の面積と三平方の定理", body: "円の面積 ＝ 半径 × 半径 × 円周率。直角三角形の斜辺を c とすると a² + b² = c² が成り立ちます。" },
+      { title: "【社会】日本国憲法の三大原則", body: "国民主権・基本的人権の尊重・平和主義。1946年公布、1947年施行。" },
+      { title: "【国語】古典文学の代表作", body: "『枕草子』は清少納言、『徒然草』は吉田兼好、『源氏物語』は紫式部。" }
+    ];
+
+    const RANK_TIERS = [
+      { rank: 1, name: "見習い探求者", reqCorrect: 0 },
+      { rank: 2, name: "若葉の学び手", reqCorrect: 5 },
+      { rank: 3, name: "森の観察者", reqCorrect: 12 },
+      { rank: 4, name: "知恵の旅人", reqCorrect: 22 },
+      { rank: 5, name: "精鋭の学徒", reqCorrect: 35 },
+      { rank: 6, name: "叡智の騎士", reqCorrect: 55 },
+      { rank: 7, name: "星辰の学者", reqCorrect: 80 },
+      { rank: 8, name: "大聖堂の賢者", reqCorrect: 120 },
+      { rank: 9, name: "森羅のマスター", reqCorrect: 200 },
+      { rank: 10, name: "グランド・コトモニスト", reqCorrect: 350 }
+    ];
+
+    const TITLE_MILESTONES = [
+      { count: 1, title: "頑張ったで賞" },
+      { count: 10, title: "コツコツ努力家" },
+      { count: 50, title: "知識の開拓者" },
+      { count: 200, title: "博学のマスター" },
+      { count: 1000, title: "千問の賢者" },
+      { count: 10000, title: "万問の伝説" },
+      { count: 100000, title: "ゴッドオブコトモン" }
+    ];
+
+    // =========================================================
+    // 4. 建築物（全750種）＆装飾品（全1,000種）カタログ生成エンジン
+    // =========================================================
+    const FEATURED_ARCHITECTURES = [
+      { id: "grand_cathedral", name: "大聖堂", category: "特別神域建築", cost: 1500, enterable: true, isCathedral: true, color: "#e6c675",
+        desc: "キャンプの中でも圧倒的に巨大な超巨大建築！入室＆室内装飾配置が可能で、神コトモン最終進化の必須条件。" },
+      { id: "tokyo_tower", name: "東京タワー", category: "750特別世界建築", cost: 750, enterable: true, color: "#e85d3f",
+        desc: "展望フロアへ入室でき、室内でもコトモン同行＆装飾配置が可能。" },
+      { id: "sagrada_familia", name: "サグラダファミリア", category: "750特別世界建築", cost: 750, enterable: true, color: "#c99b49",
+        desc: "光あふれる聖堂内部へ入室可能。室内散策＆模様替えに対応。" },
+      { id: "himeji_castle", name: "姫路城", category: "750特別世界建築", cost: 750, enterable: true, color: "#f4f6f5",
+        desc: "天守内部へ入室でき、コトモンを連れて歩いたり装飾品を置いたりできる。" },
+      { id: "kremlin_red_square", name: "クレムリンと赤の広場", category: "750特別世界建築", cost: 750, enterable: true, color: "#b83b3b",
+        desc: "大広間・広場空間へ入室可能。一人称同行＆装飾配置に対応。" },
+      { id: "angkor_wat", name: "アンコール・ワット", category: "750特別世界建築", cost: 750, enterable: true, color: "#8c7a6b",
+        desc: "石造り回廊・聖域内部へ入室でき、室内でコトモンと過ごせる。" },
+      { id: "imperial_palace", name: "皇居", category: "750特別世界建築", cost: 750, enterable: true, color: "#d8cfc2",
+        desc: "格式ある広間空間へ入室可能。一人称同行＆装飾配置に対応。" },
+      { id: "white_house", name: "ホワイトハウス", category: "750特別世界建築", cost: 750, enterable: true, color: "#f8fafc",
+        desc: "白亜のホール空間へ入室でき、コトモンを連れて装飾品を配置できる。" }
+    ];
+
+    const ARCH_CATEGORIES = ["750特別世界建築", "学問・図書館", "城郭・宮殿", "天文・神殿", "庭園・工房", "展望・橋梁"];
+    const ARCH_PREFIXES = [
+      "木漏れ日の", "星辰の", "翡翠の", "黄金の", "古文書と", "風車の", "水晶の", "白亜の", "紅葉の", "朝露の",
+      "深緑の", "知恵の", "月影の", "太陽の", "琥珀の", "雲上の", "静寂の", "祝祭の", "叡智の", "森羅の",
+      "桜花の", "青嵐の", "雪化粧の", "銀杏の", "翠玉の", "暁の", "黄昏の", "銀河の", "響きの", "調和の"
+    ];
+    const ARCH_CORES = [
+      "大図書館", "天文観測塔", "書院造りの茶室", "森の学習ドーム", "螺旋の時計台",
+      "石造りの回廊", "水辺の音楽堂", "錬金術の工房", "五重の宝塔", "ガラスの植物園",
+      "円形コロシアム", "古代の石舞台", "空中庭園パビリオン", "星見のプラネタリウム", "知恵の灯台",
+      "木組みのログハウス", "白磁の美術館", "歴史資料館", "四季の迎賓館", "天球儀ホール",
+      "風見鶏の展望台", "苔庭の離れ", "大時計の駅舎", "聖域の礼拝堂", "双子の尖塔"
+    ];
+    const ARCH_COLORS = ["#588157", "#c9972c", "#4ea8de", "#bc6c25", "#8d99ae", "#6d597a", "#e07a5f", "#3d5a80"];
+
+    const ARCHITECTURE_CATALOG_750 = (() => {
+      const list = [...FEATURED_ARCHITECTURES];
+      let idx = 0;
+      while (list.length < 750) {
+        const pref = ARCH_PREFIXES[idx % ARCH_PREFIXES.length];
+        const core = ARCH_CORES[Math.floor(idx / ARCH_PREFIXES.length) % ARCH_CORES.length];
+        const tier = Math.floor(idx / (ARCH_PREFIXES.length * ARCH_CORES.length));
+        const suffix = tier > 0 ? `・第${tier + 1}様式` : "";
+        const cat = ARCH_CATEGORIES[1 + (idx % (ARCH_CATEGORIES.length - 1))];
+        const cost = idx % 4 === 0 ? 750 : 250 + (idx % 5) * 100;
+        const enterable = cost >= 750;
+        list.push({
+          id: `arch_750_${list.length + 1}`,
+          name: `No.${String(list.length + 1).padStart(3, "0")} ${pref}${core}${suffix}`,
+          category: cat,
+          cost,
+          enterable,
+          color: ARCH_COLORS[idx % ARCH_COLORS.length],
+          desc: enterable
+            ? `${cat}の大型建築（750コトマネー級）。入室して一人称探索＆コトモン同行・室内装飾配置が可能！`
+            : `${cat}のキャンプ建築。人モチーフコトモンと協力してキャンプの景観を彩ります。`
+        });
+        idx++;
+      }
+      return list;
+    })();
+
+    // 装飾品（全1,000種：全千種）生成
+    const DECOR_CATEGORIES = ["照明・ランタン", "机・書棚", "椅子・ソファ", "自然・庭園", "天文・美術", "楽器・雑貨"];
+    const DECOR_ADJECTIVES = [
+      "木漏れ日の", "黄金の", "翡翠の", "白樺の", "星屑の", "琥珀の", "真鍮の", "苔むした", "桜色の", "瑠璃色の",
+      "温もりの", "古代の", "クリスタル", "森の精霊", "月光の", "朝露の", "楓の", "深緑の", "天球の", "祝祭の"
+    ];
+    const DECOR_NOUNS = [
+      { name: "焚き火ランタン", icon: "🔥", cat: "照明・ランタン", color: "#ff9f1c" },
+      { name: "森の学習机", icon: "🪵", cat: "机・書棚", color: "#9c6644" },
+      { name: "知恵の大書棚", icon: "📚", cat: "机・書棚", color: "#588157" },
+      { name: "くつろぎソファ", icon: "🛋️", cat: "椅子・ソファ", color: "#a44a3f" },
+      { name: "ミニ噴水", icon: "⛲", cat: "自然・庭園", color: "#4ea8de" },
+      { name: "観葉の盆栽", icon: "🪴", cat: "自然・庭園", color: "#386641" },
+      { name: "天球儀スタンド", icon: "🌐", cat: "天文・美術", color: "#e9c46a" },
+      { name: "森のハープ", icon: "🪕", cat: "楽器・雑貨", color: "#d4a373" },
+      { name: "ステンドグラス灯", icon: "🏮", cat: "照明・ランタン", color: "#e76f51" },
+      { name: "星図の絨毯", icon: "🧶", cat: "天文・美術", color: "#6d597a" }
+    ];
+    const DECOR_FINISHES = ["（標準仕上げ）", "（彫刻入り）", "（金箔装飾）", "（職人特注）", "（神域モデル）"];
+
+    const DECORATION_CATALOG_1000 = (() => {
+      const list = [];
+      for (let i = 0; i < 1000; i++) {
+        const adj = DECOR_ADJECTIVES[i % DECOR_ADJECTIVES.length];
+        const noun = DECOR_NOUNS[Math.floor(i / DECOR_ADJECTIVES.length) % DECOR_NOUNS.length];
+        const fin = DECOR_FINISHES[Math.floor(i / (DECOR_ADJECTIVES.length * DECOR_NOUNS.length)) % DECOR_FINISHES.length];
+        list.push({
+          id: `decor_${i + 1}`,
+          code: `No.${String(i + 1).padStart(4, "0")}`,
+          name: `${adj}${noun.name}${fin}`,
+          icon: noun.icon,
+          category: noun.cat,
+          color: noun.color
+        });
+      }
+      return list;
+    })();
+
+    // 100種スタンプ＆全8種ボードゲーム
+    const STAMP_BASES = ["ナイス！", "ファイト！", "わかった！", "すごい！", "ありがとう", "おはよう", "おやすみ", "休憩しよう", "進化した！", "大聖堂できた！"];
+    const STAMP_ICONS = ["🌿", "🔥", "⭐", "📖", "🎉", "💡", "💪", "✨", "🍵", "👑"];
+    const STAMPS_100 = Array.from({ length: 100 }, (_, i) => ({
+      id: `st_${i + 1}`,
+      label: `${STAMP_ICONS[Math.floor(i / 10) % 10]}${STAMP_BASES[i % 10]}#${i + 1}`
+    }));
+
+    const BOARD_GAMES_8 = [
+      { id: "shogi", name: "将棋（コトモン将棋）", special: "成り・王手時にクイズ正解で2連続行動＆持ち駒封印チャンス！" },
+      { id: "othello", name: "オセロ（コトモンオセロ）", special: "角・特殊マス配置時にクイズ正解で『反転不可の防御石』化！" },
+      { id: "chess", name: "チェス（コトモンチェス）", special: "駒取り・チェック時にクイズ正解で駒に属性シールド付与！" },
+      { id: "gomoku", name: "五目並べ（コトモン五目）", special: "4つ並び（リーチ）形成・阻止時にクイズ正解で連続配置ボーナス！" },
+      { id: "mancala", name: "マンカラ（古代宝石盤）", special: "自分の陣地のゴールにぴったり着地＋クイズ正解で追加ターン＆宝石2倍！" },
+      { id: "backgammon", name: "バックギャモン（駆け引き盤）", special: "相手の駒をヒット（弾き飛ばし）するときクイズ正解で相手をバーへ送還！" },
+      { id: "mini_shogi", name: "ミニ将棋（3×4スピード）", special: "3×4マスの超高速決戦！持ち駒活用＆クイズ正解で成りが即解禁！" },
+      { id: "geister", name: "正体隠し心理戦ボード", special: "『良いコトモン駒』と『トラップ駒』を隠す心理戦！接触時のクイズで正体看破！" }
+    ];
+
+    // =========================================================
+    // 5. 状態管理
+    // =========================================================
+    const STORAGE_KEY = "kotomon_s_class_750_1000_v1";
+
+    function todayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
+    const defaultState = {
+      money: 3500,
+      candy: 30,
+      hasCathedral: false,
+      selectedKotomonId: "mori_shizuku",
+      viewedStage: 1,
+      render3D: false,
+      activeTab: "dex",
+      studyMode: "battle",
+      selectedSubject: "すべて",
+      totalCorrect: 0,
+      rankLevel: 1,
+      towerDate: todayKey(),
+      towerRunsToday: 0,
+      towerFloor: 1,
+      reviewQueue: [],
+      campFirstPerson: true,
+      insideBuildingId: null,
+      builtArchitecture: ["himeji_castle"],
+      outdoorFurniture: [{ id: "f_init_1", typeId: "decor_1", x: 0, z: 1.5, rot: 0 }],
+      indoorFurniture: {},
+      selectedDecorId: "decor_1",
+      // 750建築・1000装飾カタログ検索＆ページ状態
+      archCatFilter: "すべて",
+      archSearch: "",
+      archPage: 0,
+      decorCatFilter: "すべて",
+      decorSearch: "",
+      decorPage: 0,
+      // 交流・翻訳・盤ゲーム・ガチャ
+      targetLang: "en",
+      autoTranslate: true,
+      chatMessages: [
+        { sender: "リナ（海外フレンド）", text: "Hello! Your 3D camp looks amazing!", translated: "こんにちは！あなたの3Dキャンプすごく素敵だね！", time: "09:10" },
+        { sender: "あなた", text: "全750種の建築と1000種の装飾で模様替え中！", translated: "Decorating with 750 buildings & 1000 items!", time: "09:12" }
+      ],
+      selectedBoardGame: "shogi",
+      boardCells: Array(64).fill(""),
+      boardTurn: "先手（🌿）",
+      lastGachaPulls: [],
+      kotomonProgress: {
+        mori_shizuku: { level: 12, stage: 2, ev: { hp: 24, atk: 12, def: 18, spa: 32, spd: 20, spe: 16 } },
+        shogun_hito: { level: 18, stage: 3, ev: { hp: 16, atk: 28, def: 20, spa: 36, spd: 24, spe: 22 } },
+        hikari_hoshi: { level: 8, stage: 1, ev: { hp: 10, atk: 14, def: 8, spa: 22, spd: 12, spe: 26 } }
+      }
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        const merged = {
+          ...structuredClone(defaultState),
+          ...parsed,
+          kotomonProgress: { ...structuredClone(defaultState.kotomonProgress), ...(parsed.kotomonProgress || {}) }
+        };
+        if (merged.towerDate !== todayKey()) {
+          merged.towerDate = todayKey();
+          merged.towerRunsToday = 0;
+        }
+        merged.hasCathedral = merged.builtArchitecture.includes("grand_cathedral");
+        return merged;
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    const appState = loadState();
+    let miniQuizResult = null;
+    let battleState = {
+      playerHp: 120, playerMaxHp: 120, enemyHp: 90, enemyMaxHp: 90,
+      enemyName: "森の試練コトモン", isTowerBattle: false, isPromotionTest: false,
+      log: "問題に正解してコトモンの技を繰り出そう！"
+    };
+    let currentQuestion = null;
+
+    const playerPose = { x: 0, z: 5.5, yaw: 0 };
+    const aiAgents = [
+      { id: "mori_shizuku", x: -1.8, z: 3.5, vx: 0, vz: 0, state: "散策", timer: 1.5 },
+      { id: "shogun_hito", x: 2.2, z: 2.5, vx: 0, vz: 0, state: "建築設計", timer: 2.0 },
+      { id: "hikari_hoshi", x: 0.4, z: 1.2, vx: 0, vz: 0, state: "星見休憩", timer: 1.8 }
+    ];
+    let lastFrameTime = performance.now();
+
+    function saveState() {
+      appState.hasCathedral = appState.builtArchitecture.includes("grand_cathedral");
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch {}
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 2200);
+    }
+
+    function runSplashSequence() {
+      const splash = document.getElementById("splashScreen");
+      const fill = document.getElementById("splashFill");
+      const pct = document.getElementById("splashPct");
+      const label = document.getElementById("splashLabel");
+      splash.classList.remove("hidden");
+      fill.style.width = "0%"; pct.textContent = "0%";
+      const steps = [
+        { p: 25, text: "🌿 森の聖域とコトモンを召喚中..." },
+        { p: 55, text: "🏛️ 全750種の建築カタログを展開中..." },
+        { p: 82, text: "🛋️ 全1,000種の装飾カタログを展開中..." },
+        { p: 100, text: "✨ KOTOMON 準備完了！" }
+      ];
+      steps.forEach((st, i) => {
+        setTimeout(() => {
+          fill.style.width = `${st.p}%`;
+          pct.textContent = `${st.p}%`;
+          label.textContent = st.text;
+          if (st.p === 100) setTimeout(() => splash.classList.add("hidden"), 260);
+        }, 200 + i * 220);
+      });
+    }
+
+    // =========================================================
+    // 6. 体表面モチーフ特徴を備えたコトモン SVG 描画
+    // =========================================================
+    function renderKotomonSVG(species, stageObj, stageNum) {
+      const c = stageObj.color;
+      const a = stageObj.accent;
+      const scaleBoost = 0.84 + stageNum * 0.055;
+      const isGod = stageNum === 5;
+      const motif = species.motifType;
+
+      let surfaceOverlay = "";
+      if (motif === "forest") {
+        surfaceOverlay = `
+          <path d="M90,78 L90,122 M90,90 L74,82 M90,98 L106,90 M90,108 L75,102 M90,114 L105,108" stroke="${a}" stroke-width="2" fill="none" opacity="0.9" />
+          <ellipse cx="90" cy="100" rx="19" ry="23" fill="none" stroke="${a}" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.7" />
+          <circle cx="71" cy="96" r="2.5" fill="#ffffff" opacity="0.85" />
+          <circle cx="109" cy="104" r="2.2" fill="#ffffff" opacity="0.85" />
+        `;
+      } else if (motif === "human_scholar") {
+        surfaceOverlay = `
+          <circle cx="90" cy="62" r="21" fill="none" stroke="${a}" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.75" />
+          <path d="M74,94 Q90,86 106,94" stroke="${a}" stroke-width="2.2" fill="none" />
+          <path d="M76,106 Q90,114 104,106" stroke="${a}" stroke-width="2.2" fill="none" />
+          <polygon points="90,91 95,100 90,109 85,100" fill="none" stroke="${a}" stroke-width="1.8" />
+        `;
+      } else {
+        surfaceOverlay = `
+          <path d="M74,92 L88,84 L104,96 L92,112 Z" fill="none" stroke="${a}" stroke-width="1.5" opacity="0.85" />
+          <circle cx="74" cy="92" r="2.6" fill="#fffbe6" /><circle cx="88" cy="84" r="2.6" fill="#fffbe6" />
+          <circle cx="104" cy="96" r="2.6" fill="#fffbe6" /><circle cx="92" cy="112" r="2.6" fill="#fffbe6" />
+          <path d="M90,88 A12,12 0 1,1 82,99" fill="none" stroke="${a}" stroke-width="1.6" opacity="0.8" />
+        `;
+      }
+
+      return `
+        <svg width="164" height="164" viewBox="0 0 180 180" aria-label="${stageObj.name}">
+          <defs>
+            <radialGradient id="aura_${species.id}_${stageNum}" cx="50%" cy="45%" r="52%">
+              <stop offset="0%" stop-color="${a}" stop-opacity="0.78" />
+              <stop offset="100%" stop-color="${c}" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="body_${species.id}_${stageNum}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${a}" /><stop offset="52%" stop-color="${c}" /><stop offset="100%" stop-color="#14241d" />
+            </linearGradient>
+          </defs>
+          <circle cx="90" cy="92" r="${58 * scaleBoost}" fill="url(#aura_${species.id}_${stageNum})" />
+          ${isGod ? `<circle cx="90" cy="86" r="64" fill="none" stroke="#ffd56b" stroke-width="2.2" stroke-dasharray="6 5" opacity="0.9" />` : ""}
+          <g transform="translate(90,94) scale(${scaleBoost}) translate(-90,-94)">
+            <ellipse cx="90" cy="98" rx="34" ry="38" fill="url(#body_${species.id}_${stageNum})" stroke="#172620" stroke-width="2.5" />
+            <circle cx="90" cy="62" r="26" fill="url(#body_${species.id}_${stageNum})" stroke="#172620" stroke-width="2.5" />
+            <path d="M72,38 Q64,18 78,24 Q86,28 88,38 Z" fill="${a}" stroke="#172620" stroke-width="2" />
+            <path d="M108,38 Q116,18 102,24 Q94,28 92,38 Z" fill="${a}" stroke="#172620" stroke-width="2" />
+            <circle cx="80" cy="62" r="4.6" fill="#111b16" /><circle cx="100" cy="62" r="4.6" fill="#111b16" />
+            <circle cx="78.4" cy="60.4" r="1.7" fill="#ffffff" /><circle cx="98.4" cy="60.4" r="1.7" fill="#ffffff" />
+            <path d="M85,71 Q90,75 95,71" fill="none" stroke="#111b16" stroke-width="2.2" stroke-linecap="round" />
+            ${surfaceOverlay}
+          </g>
+        </svg>
+      `;
+    }
+
+    // =========================================================
+    // 7. コアロジック（進化・学習・バトル・750建築・1000装飾・交流・盤・ガチャ）
+    // =========================================================
+    function getCurrentTitle() {
+      let current = "まだ称号なし（1問正解で『頑張ったで賞』！）";
+      for (const m of TITLE_MILESTONES) { if (appState.totalCorrect >= m.count) current = m.title; }
+      return current;
+    }
+    function getNextTitleMilestone() { return TITLE_MILESTONES.find((m) => appState.totalCorrect < m.count) || null; }
+    function getRankInfo() { return RANK_TIERS.find((r) => r.rank === appState.rankLevel) || RANK_TIERS[0]; }
+    function getSpeciesById(id) { return KOTOMON_CATALOG.find((k) => k.id === id) || KOTOMON_CATALOG[0]; }
+    function getArchById(id) { return ARCHITECTURE_CATALOG_750.find((a) => a.id === id); }
+    function getDecorById(id) { return DECORATION_CATALOG_1000.find((d) => d.id === id) || DECORATION_CATALOG_1000[0]; }
+
+    function computeFinalStats(species, prog) {
+      const res = {};
+      STAT_KEYS.forEach((k) => {
+        res[k] = species.baseStats[k] + Math.floor(prog.level * 1.8) + Math.floor((prog.ev[k] || 0) / 4);
+      });
+      return res;
+    }
+
+    function canAdvanceStage(species, prog) {
+      if (prog.stage >= 5) return { ok: false, reason: "最終第5段階に到達済みです！" };
+      const nextStage = prog.stage + 1;
+      const requiredLevel = nextStage * 8;
+      if (prog.level < requiredLevel) return { ok: false, reason: `第${nextStage}段階進化にはLv.${requiredLevel}が必要です（現在Lv.${prog.level}）` };
+      if (nextStage === 5 && !appState.hasCathedral) {
+        return { ok: false, reason: "神コトモン最終進化（第5段階）には、3Dキャンプに1500コトマネーの『大聖堂』が必要です！" };
+      }
+      return { ok: true, reason: `第${nextStage}段階へ進化可能！` };
+    }
+
+    function feedStudyCandy() {
+      const species = getSpeciesById(appState.selectedKotomonId);
+      const prog = appState.kotomonProgress[species.id];
+      if (appState.candy <= 0) { SoundEngine.wrong(); showToast("勉強飴が足りません！"); return; }
+      appState.candy -= 1; prog.level += 1;
+      const evKey = STAT_KEYS[prog.level % STAT_KEYS.length];
+      prog.ev[evKey] = Math.min(252, (prog.ev[evKey] || 0) + 8);
+      SoundEngine.candy();
+      showToast(`${species.stages[prog.stage - 1].name} が Lv.${prog.level} に成長！`);
+      saveState(); renderAll();
+    }
+
+    function evolveKotomon() {
+      const species = getSpeciesById(appState.selectedKotomonId);
+      const prog = appState.kotomonProgress[species.id];
+      const check = canAdvanceStage(species, prog);
+      if (!check.ok) { SoundEngine.wrong(); showToast(check.reason); return; }
+      prog.stage += 1; appState.viewedStage = prog.stage;
+      SoundEngine.evolve();
+      showToast(`✨ ${species.stages[prog.stage - 1].name}（第${prog.stage}段階）へ進化！`);
+      saveState(); renderAll();
+    }
+
+    function pickQuestion() {
+      let pool = QUESTION_BANK;
+      if (appState.studyMode === "review") {
+        const revIds = new Set(appState.reviewQueue);
+        const revPool = QUESTION_BANK.filter((q) => revIds.has(q.id));
+        if (revPool.length > 0) pool = revPool;
+      } else if (appState.studyMode === "exam") {
+        pool = QUESTION_BANK.filter((q) => q.exam);
+      } else if (appState.selectedSubject !== "すべて") {
+        const subPool = QUESTION_BANK.filter((q) => q.subject === appState.selectedSubject);
+        if (subPool.length > 0) pool = subPool;
+      }
+      currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function startBattle({ tower = false, promo = false } = {}) {
+      const species = getSpeciesById(appState.selectedKotomonId);
+      const prog = appState.kotomonProgress[species.id];
+      const stats = computeFinalStats(species, prog);
+      const maxHp = 90 + stats.hp;
+      battleState.isTowerBattle = tower; battleState.isPromotionTest = promo;
+      battleState.playerMaxHp = maxHp; battleState.playerHp = maxHp;
+      if (tower) {
+        const eMax = 75 + appState.towerFloor * 22;
+        battleState.enemyMaxHp = eMax; battleState.enemyHp = eMax;
+        battleState.enemyName = `無限の塔 ${appState.towerFloor}階 ガーディアン`;
+        battleState.log = `🗼 無限の塔 ${appState.towerFloor}階！正解して突破しよう！`;
+      } else if (promo) {
+        const eMax = 100 + appState.rankLevel * 20;
+        battleState.enemyMaxHp = eMax; battleState.enemyHp = eMax;
+        battleState.enemyName = `ランク${appState.rankLevel + 1} 昇格試験官`;
+        battleState.log = `🏅 昇格テスト開始！正解を積み重ねて試験官を倒そう！`;
+      } else {
+        const eMax = 80 + prog.level * 5;
+        battleState.enemyMaxHp = eMax; battleState.enemyHp = eMax;
+        battleState.enemyName = `森の試練コトモン（Lv.${prog.level}）`;
+        battleState.log = `⚔️ ${species.stages[prog.stage - 1].name} のバトル開始！`;
+      }
+      pickQuestion();
+    }
+
+    function handleAnswerResult(isCorrect) {
+      const species = getSpeciesById(appState.selectedKotomonId);
+      const prog = appState.kotomonProgress[species.id];
+      const stats = computeFinalStats(species, prog);
+      const pName = species.stages[prog.stage - 1].name;
+      if (isCorrect) {
+        SoundEngine.correct(); appState.totalCorrect += 1;
+        const dmg = Math.max(24, Math.floor((stats.atk + stats.spa) * 0.34));
+        battleState.enemyHp = Math.max(0, battleState.enemyHp - dmg);
+        const rewardMoney = battleState.isTowerBattle ? 45 + appState.towerFloor * 10 : 25;
+        appState.money += rewardMoney; appState.candy += 1;
+        const evStat = appState.selectedSubject === "理科" || appState.selectedSubject === "算数／数学" ? "spa" : "atk";
+        prog.ev[evStat] = Math.min(252, (prog.ev[evStat] || 0) + 4);
+        appState.reviewQueue = appState.reviewQueue.filter((id) => id !== currentQuestion.id);
+        battleState.log = `⭕ 正解！${pName} の一撃で ${dmg} ダメージ！（+${rewardMoney}💰 / +1🍬）`;
+        if (battleState.enemyHp <= 0) {
+          if (battleState.isTowerBattle) {
+            appState.towerFloor += 1; appState.money += 120; appState.candy += 2;
+            showToast(`🗼 ${appState.towerFloor - 1}階クリア！`); battleState.isTowerBattle = false;
+          } else if (battleState.isPromotionTest) {
+            if (appState.rankLevel < 10) { appState.rankLevel += 1; appState.money += 200; showToast(`🏅 ランク${appState.rankLevel}に昇格！`); }
+            battleState.isPromotionTest = false;
+          } else { appState.money += 50; showToast("🎉 バトル勝利！50コトマネー獲得！"); }
+          battleState.enemyHp = battleState.enemyMaxHp;
+        }
+      } else {
+        SoundEngine.wrong();
+        const eDmg = Math.max(14, Math.floor(battleState.enemyMaxHp * 0.22));
+        battleState.playerHp = Math.max(1, battleState.playerHp - eDmg);
+        if (!appState.reviewQueue.includes(currentQuestion.id)) appState.reviewQueue.push(currentQuestion.id);
+        battleState.log = `❌ 正解は「${currentQuestion.choices[currentQuestion.answer]}」。${eDmg} ダメージ！`;
+      }
+      pickQuestion(); saveState(); renderAll();
+    }
+
+    // 3Dキャンプ：全750種建築＆全1,000種装飾ロジック
+    function buildArchitecture(archId) {
+      const arch = getArchById(archId);
+      if (!arch || appState.builtArchitecture.includes(arch.id)) return;
+      if (appState.money < arch.cost) { SoundEngine.wrong(); showToast(`コトマネー不足（必要：${arch.cost}）`); return; }
+      appState.money -= arch.cost;
+      appState.builtArchitecture.push(arch.id);
+      if (arch.isCathedral) appState.hasCathedral = true;
+      SoundEngine.evolve();
+      showToast(arch.isCathedral ? "⛪ 超巨大『大聖堂』完成！神コトモン進化解禁！" : `🏗️ 『${arch.name}』を建築しました！（${appState.builtArchitecture.length}/750種）`);
+      saveState(); renderAll();
+    }
+
+    function enterBuilding(archId) {
+      const arch = getArchById(archId);
+      if (!arch || !arch.enterable || !appState.builtArchitecture.includes(arch.id)) return;
+      SoundEngine.tap();
+      appState.insideBuildingId = arch.id;
+      appState.campFirstPerson = true;
+      playerPose.x = 0; playerPose.z = 4.2; playerPose.yaw = Math.PI;
+      if (!appState.indoorFurniture[arch.id]) appState.indoorFurniture[arch.id] = [];
+      showToast(`🚪 『${arch.name}』に入室しました！全1000種装飾品を配置できます`);
+      saveState(); renderAll();
+    }
+
+    function exitBuilding() {
+      SoundEngine.tap();
+      appState.insideBuildingId = null;
+      playerPose.x = 0; playerPose.z = 5.2; playerPose.yaw = 0;
+      saveState(); renderAll();
+    }
+
+    function getCurrentFurnitureList() {
+      if (appState.insideBuildingId) {
+        if (!appState.indoorFurniture[appState.insideBuildingId]) appState.indoorFurniture[appState.insideBuildingId] = [];
+        return appState.indoorFurniture[appState.insideBuildingId];
+      }
+      return appState.outdoorFurniture;
+    }
+
+    function placeFurnitureInFront() {
+      const list = getCurrentFurnitureList();
+      const dObj = getDecorById(appState.selectedDecorId);
+      list.push({
+        id: `furn_${Date.now()}`,
+        typeId: dObj.id,
+        x: Number((playerPose.x + Math.sin(playerPose.yaw) * 1.8).toFixed(1)),
+        z: Number((playerPose.z + Math.cos(playerPose.yaw) * 1.8).toFixed(1)),
+        rot: Math.round((playerPose.yaw * 180) / Math.PI)
+      });
+      SoundEngine.candy();
+      showToast(`${dObj.icon} ${dObj.name} を配置しました！`);
+      saveState(); renderAll();
+    }
+
+    function rotateLastFurniture() {
+      const list = getCurrentFurnitureList();
+      if (!list.length) return;
+      list[list.length - 1].rot = (list[list.length - 1].rot + 45) % 360;
+      SoundEngine.tap(); saveState(); renderAll();
+    }
+
+    function removeLastFurniture() {
+      const list = getCurrentFurnitureList();
+      if (!list.length) return;
+      list.pop();
+      SoundEngine.tap(); saveState(); renderAll();
+    }
+
+    function movePlayer(fAmt, sAmt, tAmt) {
+      playerPose.yaw += tAmt;
+      playerPose.x += Math.sin(playerPose.yaw) * fAmt + Math.cos(playerPose.yaw) * sAmt;
+      playerPose.z += Math.cos(playerPose.yaw) * fAmt - Math.sin(playerPose.yaw) * sAmt;
+      const bound = appState.insideBuildingId ? 5.2 : 8.5;
+      playerPose.x = Math.max(-bound, Math.min(bound, playerPose.x));
+      playerPose.z = Math.max(-bound, Math.min(bound, playerPose.z));
+    }
+
+    function updateCampAI(dt) {
+      const companion = aiAgents.find((a) => a.id === appState.selectedKotomonId) || aiAgents[0];
+      aiAgents.forEach((ag) => {
+        if (ag.id === companion.id) {
+          const tx = playerPose.x - Math.sin(playerPose.yaw) * 1.4 + Math.cos(playerPose.yaw) * 0.9;
+          const tz = playerPose.z - Math.cos(playerPose.yaw) * 1.4 - Math.sin(playerPose.yaw) * 0.9;
+          ag.x += (tx - ag.x) * Math.min(1, dt * 3.5);
+          ag.z += (tz - ag.z) * Math.min(1, dt * 3.5);
+          ag.state = appState.insideBuildingId ? "室内同行" : "一緒に散策";
+          return;
+        }
+        ag.timer -= dt;
+        if (ag.timer <= 0) {
+          ag.timer = 1.6 + Math.random() * 2.0;
+          ag.state = ag.id === "shogun_hito" ? "建築設計" : "散策";
+          const ang = Math.random() * Math.PI * 2;
+          ag.vx = Math.cos(ang) * 0.9; ag.vz = Math.sin(ang) * 0.9;
+        }
+        ag.x += ag.vx * dt; ag.z += ag.vz * dt;
+        if (Math.abs(ag.x) > 5.5) ag.vx *= -1;
+        if (Math.abs(ag.z) > 5.5) ag.vz *= -1;
+      });
+    }
+
+    function renderCampCanvas(canvas) {
+      if (!canvas) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(300, Math.floor(rect.width));
+      const h = Math.max(210, Math.floor(rect.height));
+      if (canvas.width !== w * dpr || canvas.height !== h * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
+      const ctx = canvas.getContext("2d");
+      ctx.save(); ctx.scale(dpr, dpr);
+      const insideArch = appState.insideBuildingId ? getArchById(appState.insideBuildingId) : null;
+
+      if (!appState.campFirstPerson) {
+        ctx.fillStyle = insideArch ? "#2b241d" : "#1d3f2e";
+        ctx.fillRect(0, 0, w, h);
+        const cx = w / 2, cy = h / 2, sc = 13;
+        if (!insideArch) {
+          appState.builtArchitecture.slice(0, 12).forEach((bid, idx) => {
+            const arch = getArchById(bid);
+            if (!arch) return;
+            const bx = cx + ((idx % 4) - 1.5) * 64, by = cy - 52 - Math.floor(idx / 4) * 34;
+            const sz = arch.isCathedral ? 28 : 16;
+            ctx.fillStyle = arch.color;
+            ctx.fillRect(bx - sz, by - sz * 0.65, sz * 2, sz * 1.3);
+            ctx.strokeStyle = arch.isCathedral ? "#ffd56b" : "#fff";
+            ctx.strokeRect(bx - sz, by - sz * 0.65, sz * 2, sz * 1.3);
+            ctx.fillStyle = "#fff"; ctx.font = "bold 9px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(arch.isCathedral ? "⛪大聖堂" : arch.name.slice(0, 8), bx, by - sz * 0.65 - 3);
+          });
+        }
+        getCurrentFurnitureList().forEach((f) => {
+          const dObj = getDecorById(f.typeId);
+          ctx.fillStyle = dObj.color;
+          ctx.beginPath(); ctx.arc(cx + f.x * sc, cy + f.z * sc, 6.5, 0, Math.PI * 2); ctx.fill();
+        });
+        aiAgents.forEach((ag) => {
+          const sp = getSpeciesById(ag.id);
+          const st = sp.stages[appState.kotomonProgress[ag.id].stage - 1];
+          ctx.fillStyle = st.accent;
+          ctx.beginPath(); ctx.arc(cx + ag.x * sc, cy + ag.z * sc, 7.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.font = "bold 9.5px sans-serif"; ctx.textAlign = "center";
+          ctx.fillText(st.name, cx + ag.x * sc, cy + ag.z * sc - 10);
+        });
+        ctx.fillStyle = "#ffdd57";
+        ctx.beginPath(); ctx.arc(cx + playerPose.x * sc, cy + playerPose.z * sc, 7.5, 0, Math.PI * 2); ctx.fill();
+      } else {
+        const horizonY = h * 0.48;
+        ctx.fillStyle = insideArch ? "#3b2c35" : "#2f6448";
+        ctx.fillRect(0, 0, w, horizonY);
+        ctx.fillStyle = insideArch ? "#573f2d" : "#244d35";
+        ctx.fillRect(0, horizonY, w, h - horizonY);
+
+        const projectObj = (wx, wz, col, label, rBase) => {
+          const dx = wx - playerPose.x, dz = wz - playerPose.z;
+          const cos = Math.cos(-playerPose.yaw), sin = Math.sin(-playerPose.yaw);
+          const rx = dx * cos - dz * sin, rz = dx * sin + dz * cos;
+          if (rz <= 0.4) return;
+          const sx = w / 2 + (rx / rz) * 250;
+          const sy = horizonY + (1.2 / rz) * (h * 0.44);
+          const rad = Math.max(6, (rBase / rz) * 26);
+          ctx.fillStyle = col;
+          ctx.beginPath(); ctx.arc(sx, sy - rad * 0.4, rad, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+          ctx.fillText(label, sx, sy - rad * 1.4 - 4);
+        };
+
+        getCurrentFurnitureList().forEach((f) => {
+          const dObj = getDecorById(f.typeId);
+          projectObj(f.x, f.z, dObj.color, `${dObj.icon}${dObj.name}`, 0.9);
+        });
+        aiAgents.forEach((ag) => {
+          const sp = getSpeciesById(ag.id);
+          const st = sp.stages[appState.kotomonProgress[ag.id].stage - 1];
+          projectObj(ag.x, ag.z, st.accent, `${st.name}（${ag.state}）`, 1.05);
+        });
+      }
+      ctx.restore();
+    }
+
+    function campLoop(now) {
+      const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+      lastFrameTime = now;
+      if (appState.activeTab === "camp") {
+        updateCampAI(dt);
+        renderCampCanvas(document.getElementById("campCanvas"));
+      }
+      requestAnimationFrame(campLoop);
+    }
+
+    function translateSample(text, lang) {
+      const map = {
+        en: `[EN] ${text} (Study & Kotomon adventure!)`,
+        zh: `[中文] ${text}（一起努力学习吧！）`,
+        ko: `[KO] ${text} (함께 공부해요!)`,
+        es: `[ES] ${text} (¡Estudiemos juntos!)`,
+        fr: `[FR] ${text} (Étudions ensemble !)`
+      };
+      return map[lang] || `[${lang.toUpperCase()}] ${text}`;
+    }
+
+    function pullTenGacha() {
+      const cost = 500;
+      if (appState.money < cost) { SoundEngine.wrong(); showToast("コトマネーが500必要です！"); return; }
+      appState.money -= cost;
+      const results = Array.from({ length: 10 }, (_, idx) => {
+        const sp = KOTOMON_CATALOG[Math.floor(Math.random() * KOTOMON_CATALOG.length)];
+        const st = sp.stages[Math.floor(Math.random() * 4)];
+        const decor = DECORATION_CATALOG_1000[Math.floor(Math.random() * DECORATION_CATALOG_1000.length)];
+        appState.candy += 1;
+        const prog = appState.kotomonProgress[sp.id];
+        prog.ev.spa = Math.min(252, (prog.ev.spa || 0) + 3);
+        return `${idx + 1}. ${st.name}＋${decor.icon}${decor.code}`;
+      });
+      appState.lastGachaPulls = results;
+      SoundEngine.purchase();
+      showToast("✨ 10連召喚完了！勉強飴×10＆限定装飾を獲得！");
+      saveState(); renderAll();
+    }
+
+    // =========================================================
+    // 8. 各タブレンダリング
+    // =========================================================
+    function renderHeader() {
+      document.getElementById("hudMoney").textContent = `💰 ${appState.money.toLocaleString()}`;
+      document.getElementById("hudCandy").textContent = `🍬 ${appState.candy}`;
+      document.getElementById("hudRank").textContent = `🏅 R${appState.rankLevel}`;
+      document.getElementById("hudCorrect").textContent = `✅ ${appState.totalCorrect}`;
+      document.getElementById("btnSound").textContent = SoundEngine.isEnabled() ? "🔊" : "🔇";
+    }
+
+    function renderDexView(container) {
+      const species = getSpeciesById(appState.selectedKotomonId);
+      const prog = appState.kotomonProgress[species.id];
+      const viewStageNum = Math.min(5, Math.max(1, appState.viewedStage || prog.stage));
+      const stageObj = species.stages[viewStageNum - 1];
+      const finalStats = computeFinalStats(species, prog);
+      const evoCheck = canAdvanceStage(species, prog);
+
+      container.innerHTML = `
+        <div class="dex-strip">
+          ${KOTOMON_CATALOG.map((sp) => {
+            const active = sp.id === appState.selectedKotomonId ? "active" : "";
+            const st = sp.stages[appState.kotomonProgress[sp.id].stage - 1];
+            return `<button class="dex-chip ${active}" data-kid="${sp.id}">${st.name}</button>`;
+          }).join("")}
+        </div>
+        <article class="kotomon-sheet">
+          <header class="sheet-header">
+            <span class="stage-tag ${stageObj.isGodStage ? "god" : ""}">
+              第${viewStageNum}段階 / 全5段階 ${stageObj.isGodStage ? "★ 神コトモン" : `・ ${species.category}`}
+            </span>
+            <h1 class="kotomon-name">${stageObj.name}</h1>
+            <div class="kotomon-sub">Lv.${prog.level} ・ 属性：${species.element}</div>
+          </header>
+          <div class="visual-stage ${appState.render3D ? "mode-3d" : ""}">
+            <div class="visual-controls-top">
+              <button class="mini-toggle" id="btnToggle3D">${appState.render3D ? "🧊 3D立体表示中" : "🎨 2Dイラスト表示中"}</button>
+              <span class="mini-toggle">現在到達：第${prog.stage}段階</span>
+            </div>
+            <div class="kotomon-art-wrap" id="kotomonArtWrap">${renderKotomonSVG(species, stageObj, viewStageNum)}</div>
+          </div>
+          <div class="stage-switcher">
+            ${species.stages.map((s) => `<button class="stage-btn ${s.stage === viewStageNum ? "active" : ""}" data-stage="${s.stage}">${s.stage}段階${s.stage <= prog.stage ? "" : "🔒"}</button>`).join("")}
+          </div>
+          <div class="meta-row">
+            <div class="meta-compact"><span class="meta-label">性格</span><span class="meta-val">${stageObj.personality}</span></div>
+            <div class="meta-compact"><span class="meta-label">体長 / 体重</span><span class="meta-val">${stageObj.size} / ${stageObj.weight}</span></div>
+          </div>
+          <div class="desc-quiz-grid">
+            <section class="desc-box"><h3>コトモンの説明</h3><p class="desc-text">${stageObj.desc}</p></section>
+            <aside class="quiz-side-box">
+              <div><div class="quiz-side-title">クイズ</div><div class="quiz-side-q">${stageObj.quiz.q}</div></div>
+              <div class="quiz-mini-opts">${stageObj.quiz.choices.map((ch, idx) => `<button class="mini-opt-btn" data-qidx="${idx}">${ch}</button>`).join("")}</div>
+              <div class="quiz-feedback" id="miniQuizFeedback">${miniQuizResult || ""}</div>
+            </aside>
+          </div>
+          <div class="detail-action-row">
+            <button class="btn-primary" id="btnDetail">🔍 詳しく（モチーフ解説）</button>
+            <button class="btn-gold" id="btnEvolve">🧬 進化する</button>
+          </div>
+          <section class="stats-panel">
+            <div class="stats-top"><span>6値ステータス＆努力値（EV）</span><span>勉強飴：${appState.candy}個所持</span></div>
+            ${STAT_KEYS.map((k) => {
+              const pct = Math.min(100, Math.round((finalStats[k] / 160) * 100));
+              return `<div class="stat-row"><strong>${STAT_LABELS[k]}</strong><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div><span>${finalStats[k]} <small>(EV:${prog.ev[k] || 0})</small></span></div>`;
+            }).join("")}
+            <div class="candy-box">
+              <button class="btn-primary" id="btnFeedCandy">🍬 勉強飴を1個あげる</button>
+              <span class="sub-chip">${appState.hasCathedral ? "⛪ 大聖堂：建設済み" : "⛪ 大聖堂：未建築"}</span>
+            </div>
+            <div class="evolution-note">${evoCheck.ok ? "✅ " : "📌 "}${evoCheck.reason}</div>
+          </section>
+        </article>
+      `;
+
+      container.querySelectorAll(".dex-chip").forEach((btn) => btn.addEventListener("click", () => {
+        SoundEngine.tap(); appState.selectedKotomonId = btn.dataset.kid;
+        appState.viewedStage = appState.kotomonProgress[appState.selectedKotomonId].stage;
+        miniQuizResult = null; saveState(); renderAll();
+      }));
+      document.getElementById("btnToggle3D").addEventListener("click", () => { SoundEngine.tap(); appState.render3D = !appState.render3D; saveState(); renderAll(); });
+      document.getElementById("kotomonArtWrap").addEventListener("click", () => { SoundEngine.candy(); showToast(`${stageObj.name}：体表面の紋様がきらめいた！`); });
+      container.querySelectorAll(".stage-btn").forEach((b) => b.addEventListener("click", () => { SoundEngine.tap(); appState.viewedStage = Number(b.dataset.stage); miniQuizResult = null; saveState(); renderAll(); }));
+      container.querySelectorAll(".mini-opt-btn").forEach((b) => b.addEventListener("click", () => {
+        if (Number(b.dataset.qidx) === stageObj.quiz.answer) {
+          SoundEngine.correct(); appState.candy += 1; appState.totalCorrect += 1; miniQuizResult = "⭕ 正解！勉強飴+1";
+        } else { SoundEngine.wrong(); miniQuizResult = "❌ もう一回！"; }
+        saveState(); renderHeader(); document.getElementById("miniQuizFeedback").textContent = miniQuizResult;
+      }));
+      document.getElementById("btnDetail").addEventListener("click", () => {
+        SoundEngine.tap();
+        document.getElementById("modalTitle").textContent = `${stageObj.name} — モチーフ深掘り解説`;
+        document.getElementById("modalBody").innerHTML = `<p><strong>系統・属性：</strong>${species.category} / ${species.element}</p><p><strong>モチーフ解説：</strong>${stageObj.motifDeep}</p>`;
+        document.getElementById("detailModal").classList.add("open");
+      });
+      document.getElementById("btnEvolve").addEventListener("click", evolveKotomon);
+      document.getElementById("btnFeedCandy").addEventListener("click", feedStudyCandy);
+    }
+
+    function renderBattleView(container) {
+      if (!currentQuestion) pickQuestion();
+      const rankInfo = getRankInfo();
+      const titleNow = getCurrentTitle();
+      const nextMilestone = getNextTitleMilestone();
+      const subjects = ["すべて", "国語", "算数／数学", "理科", "社会", "英語"];
+
+      container.innerHTML = `
+        <section class="section-card">
+          <div class="card-title-row"><h2 class="card-title">⚔️ 学習＆RPGバトル</h2><span class="sub-chip">復習待ち：${appState.reviewQueue.length}問</span></div>
+          <div class="mode-tabs">
+            ${[["battle", "4択RPGバトル"], ["typing", "専用タイピング"], ["exam", "受験対策"], ["review", "復習モード"], ["reference", "公式図鑑"]].map(([k, l]) =>
+              `<button class="mode-pill ${appState.studyMode === k ? "active" : ""}" data-mode="${k}">${l}</button>`
+            ).join("")}
+          </div>
+          ${appState.studyMode !== "reference" ? `<div class="subject-chips">${subjects.map((sub) => `<button class="subj-btn ${appState.selectedSubject === sub ? "active" : ""}" data-subj="${sub}">${sub}</button>`).join("")}</div>` : ""}
+          ${appState.studyMode === "reference" ? `
+            <div>${OFFICIAL_REFERENCE.map((item) => `<div class="ref-item"><strong>${item.title}</strong><span>${item.body}</span></div>`).join("")}</div>
+          ` : `
+            <div class="battle-arena">
+              <div class="hp-grid">
+                <div class="hp-box"><div class="hp-name"><span>味方コトモン</span><span>${battleState.playerHp}/${battleState.playerMaxHp}</span></div><div class="hp-bar"><div class="hp-fill" style="width:${Math.round((battleState.playerHp / battleState.playerMaxHp) * 100)}%"></div></div></div>
+                <div class="hp-box"><div class="hp-name"><span>${battleState.enemyName}</span><span>${battleState.enemyHp}/${battleState.enemyMaxHp}</span></div><div class="hp-bar"><div class="hp-fill enemy" style="width:${Math.round((battleState.enemyHp / battleState.enemyMaxHp) * 100)}%"></div></div></div>
+              </div>
+              <div class="battle-log">${battleState.log}</div>
+            </div>
+            <div class="question-box">
+              <div class="q-meta">${currentQuestion.subject} ${currentQuestion.exam ? "・ 受験対策" : ""}</div>
+              <div class="q-text">${currentQuestion.q}</div>
+              ${appState.studyMode === "typing" ? `
+                <div class="typing-row"><input type="text" class="typing-input" id="typingAnswerInput" placeholder="答えを入力（例：${currentQuestion.typing}）" autocomplete="off" /><button class="btn-primary" id="btnSubmitTyping">解答</button></div>
+              ` : `<div class="choices-grid">${currentQuestion.choices.map((ch, idx) => `<button class="choice-btn" data-ans="${idx}">${idx + 1}. ${ch}</button>`).join("")}</div>`}
+            </div>
+          `}
+        </section>
+        <section class="section-card">
+          <div class="card-title-row"><h2 class="card-title">🏅 ランク・称号・無限の塔（1日2回）</h2><span class="sub-chip">塔：${appState.towerFloor}階</span></div>
+          <div class="rank-title-grid">
+            <div class="info-mini-card"><h4>ランク（全10段階）</h4><div class="info-big">R${rankInfo.rank}：${rankInfo.name}</div><button class="btn-sky" id="btnPromoTest" style="width:100%;margin-top:4px;">昇格テスト</button></div>
+            <div class="info-mini-card"><h4>累計正解数称号（〜10万問）</h4><div class="info-big" style="font-size:13px;">${titleNow}</div><div style="font-size:10.5px;color:var(--ink-muted);">${nextMilestone ? `次：『${nextMilestone.title}』（あと${Math.max(0, nextMilestone.count - appState.totalCorrect).toLocaleString()}問）` : "最高称号『ゴッドオブコトモン』達成！"}</div></div>
+          </div>
+          <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:11.5px;font-weight:800;">🗼 無限の塔（本日 ${appState.towerRunsToday} / 2 回）</span>
+            <button class="btn-crimson" id="btnTowerRun">無限の塔に挑む</button>
+          </div>
+        </section>
+      `;
+
+      container.querySelectorAll(".mode-pill").forEach((btn) => btn.addEventListener("click", () => { SoundEngine.tap(); appState.studyMode = btn.dataset.mode; if (appState.studyMode !== "reference") pickQuestion(); saveState(); renderAll(); }));
+      container.querySelectorAll(".subj-btn").forEach((btn) => btn.addEventListener("click", () => { SoundEngine.tap(); appState.selectedSubject = btn.dataset.subj; pickQuestion(); saveState(); renderAll(); }));
+      container.querySelectorAll(".choice-btn").forEach((btn) => btn.addEventListener("click", () => handleAnswerResult(Number(btn.dataset.ans) === currentQuestion.answer)));
+      const btnTyping = document.getElementById("btnSubmitTyping");
+      if (btnTyping) {
+        btnTyping.addEventListener("click", () => {
+          const val = (document.getElementById("typingAnswerInput").value || "").trim().toLowerCase();
+          handleAnswerResult(val === currentQuestion.typing.toLowerCase() || val === currentQuestion.choices[currentQuestion.answer].toLowerCase());
+        });
+      }
+      document.getElementById("btnPromoTest").addEventListener("click", () => {
+        if (appState.rankLevel >= 10) { showToast("すでに最高ランク10です！"); return; }
+        const nextTier = RANK_TIERS.find((r) => r.rank === appState.rankLevel + 1);
+        if (appState.totalCorrect < nextTier.reqCorrect) { SoundEngine.wrong(); showToast(`昇格条件：累計${nextTier.reqCorrect}問正解`); return; }
+        startBattle({ promo: true }); SoundEngine.tap(); renderAll();
+      });
+      document.getElementById("btnTowerRun").addEventListener("click", () => {
+        if (appState.towerRunsToday >= 2) { SoundEngine.wrong(); showToast("無限の塔は1日2回までです！"); return; }
+        appState.towerRunsToday += 1; startBattle({ tower: true }); SoundEngine.tap(); saveState(); renderAll();
+      });
+    }
+
+    function renderCampView(container) {
+      const insideArch = appState.insideBuildingId ? getArchById(appState.insideBuildingId) : null;
+      const furnList = getCurrentFurnitureList();
+      const selectedDecor = getDecorById(appState.selectedDecorId);
+
+      // 装飾品フィルタ＆ページング（全1,000種）
+      const filteredDecor = DECORATION_CATALOG_1000.filter((d) => {
+        const catOk = appState.decorCatFilter === "すべて" || d.category === appState.decorCatFilter;
+        const q = appState.decorSearch.trim().toLowerCase();
+        const qOk = !q || d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q);
+        return catOk && qOk;
+      });
+      const decorPageSize = 8;
+      const decorTotalPages = Math.max(1, Math.ceil(filteredDecor.length / decorPageSize));
+      appState.decorPage = Math.max(0, Math.min(decorTotalPages - 1, appState.decorPage));
+      const decorSlice = filteredDecor.slice(appState.decorPage * decorPageSize, (appState.decorPage + 1) * decorPageSize);
+
+      // 建築物フィルタ＆ページング（全750種）
+      const filteredArch = ARCHITECTURE_CATALOG_750.filter((a) => {
+        const catOk = appState.archCatFilter === "すべて" || a.category === appState.archCatFilter;
+        const q = appState.archSearch.trim().toLowerCase();
+        const qOk = !q || a.name.toLowerCase().includes(q) || a.category.toLowerCase().includes(q);
+        return catOk && qOk;
+      });
+      const archPageSize = 8;
+      const archTotalPages = Math.max(1, Math.ceil(filteredArch.length / archPageSize));
+      appState.archPage = Math.max(0, Math.min(archTotalPages - 1, appState.archPage));
+      const archSlice = filteredArch.slice(appState.archPage * archPageSize, (appState.archPage + 1) * archPageSize);
+
+      container.innerHTML = `
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">🏕️ 3Dキャンプ${insideArch ? `（${insideArch.name} 室内）` : "（屋外森フィールド）"}</h2>
+            <span class="sub-chip">${appState.campFirstPerson ? "👁️ 一人称視点" : "🗺️ 俯瞰視点"}</span>
+          </div>
+          <div class="camp-stage-wrap">
+            <canvas id="campCanvas"></canvas>
+            <div class="camp-hud-top">
+              <button class="camp-badge" id="btnToggleCamView">${appState.campFirstPerson ? "🗺️ 俯瞰視点" : "👁️ 一人称視点"}</button>
+              ${insideArch ? `<button class="camp-badge" id="btnExitBuilding">🚪 外に出る</button>` : `<span class="camp-badge">人モチーフコトモン建築連携</span>`}
+            </div>
+            <div class="camp-controls-bar">
+              <button class="pad-btn" id="btnMoveFwd">▲ 前進</button>
+              <button class="pad-btn" id="btnTurnLeft">↺ 左旋回</button>
+              <button class="pad-btn" id="btnTurnRight">↻ 右旋回</button>
+              <button class="pad-btn" id="btnMoveBack">▼ 後退</button>
+            </div>
+          </div>
+
+          <div class="card-title-row" style="margin-top:6px;">
+            <h3 style="margin:0;font-size:13.5px;font-weight:900;">🛋️ 装飾品カタログ（全1,000種）</h3>
+            <span class="sub-chip">選択中：${selectedDecor.icon} ${selectedDecor.code}</span>
+          </div>
+          <div class="catalog-filter-bar">
+            <select id="decorCatSelect" style="padding:6px 8px;border-radius:10px;font-size:11px;font-weight:800;">
+              ${["すべて", ...DECOR_CATEGORIES].map((c) => `<option value="${c}" ${appState.decorCatFilter === c ? "selected" : ""}>${c}</option>`).join("")}
+            </select>
+            <input type="text" class="typing-input" id="decorSearchInput" value="${appState.decorSearch}" placeholder="装飾名・No.0001〜1000検索" style="padding:6px 9px;font-size:11.5px;" />
+          </div>
+          <div class="catalog-grid-2">
+            ${decorSlice.map((d) => `
+              <div class="decor-card ${appState.selectedDecorId === d.id ? "active" : ""}" data-did="${d.id}">
+                <strong>${d.icon} ${d.code}</strong>
+                <span>${d.name}</span>
+              </div>
+            `).join("")}
+          </div>
+          <div class="pager-row">
+            <button class="mini-toggle" id="btnDecorPrev">◀ 前へ</button>
+            <span>装飾 ${appState.decorPage + 1} / ${decorTotalPages} ページ（該当 ${filteredDecor.length} / 全1,000種）</span>
+            <button class="mini-toggle" id="btnDecorNext">次へ ▶</button>
+          </div>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn-primary" id="btnPlaceFurn">➕ 前方に装飾を置く</button>
+            <button class="btn-sky" id="btnRotateFurn">🔄 向き変更</button>
+            <button class="mini-toggle" id="btnRemoveFurn">🧹 片付け</button>
+          </div>
+          <div class="placed-list">
+            <strong>配置中の装飾（${furnList.length}個）：</strong>
+            ${furnList.length ? furnList.map((it) => {
+              const d = getDecorById(it.typeId);
+              return `${d.icon}${d.name}(${it.rot}°)`;
+            }).join(" / ") : "なし"}
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">🏛️ 建築物カタログ（全750種）</h2>
+            <span class="sub-chip">建築済：${appState.builtArchitecture.length}/750種 ${appState.hasCathedral ? "・⛪大聖堂あり" : ""}</span>
+          </div>
+          <div class="catalog-filter-bar">
+            <select id="archCatSelect" style="padding:6px 8px;border-radius:10px;font-size:11px;font-weight:800;">
+              ${["すべて", "特別神域建築", ...ARCH_CATEGORIES].map((c) => `<option value="${c}" ${appState.archCatFilter === c ? "selected" : ""}>${c}</option>`).join("")}
+            </select>
+            <input type="text" class="typing-input" id="archSearchInput" value="${appState.archSearch}" placeholder="東京タワー・大聖堂・No.001〜750検索" style="padding:6px 9px;font-size:11.5px;" />
+          </div>
+          <div class="arch-grid">
+            ${archSlice.map((arch) => {
+              const built = appState.builtArchitecture.includes(arch.id);
+              return `
+                <div class="arch-item ${arch.isCathedral ? "cathedral" : ""}">
+                  <div class="arch-info">
+                    <strong>${arch.isCathedral ? "⛪ " : "🏛️ "}${arch.name}（${arch.cost.toLocaleString()}💰）</strong>
+                    <span>[${arch.category}] ${arch.desc}</span>
+                  </div>
+                  <div class="arch-actions">
+                    ${built
+                      ? (arch.enterable ? `<button class="btn-sky" data-enter="${arch.id}">中に入る</button>` : `<span class="sub-chip">建築済</span>`)
+                      : `<button class="btn-gold" data-build="${arch.id}">建築する</button>`}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <div class="pager-row">
+            <button class="mini-toggle" id="btnArchPrev">◀ 前へ</button>
+            <span>建築 ${appState.archPage + 1} / ${archTotalPages} ページ（該当 ${filteredArch.length} / 全750種）</span>
+            <button class="mini-toggle" id="btnArchNext">次へ ▶</button>
+          </div>
+        </section>
+      `;
+
+      renderCampCanvas(document.getElementById("campCanvas"));
+      document.getElementById("btnToggleCamView").addEventListener("click", () => { SoundEngine.tap(); appState.campFirstPerson = !appState.campFirstPerson; saveState(); renderAll(); });
+      const btnExit = document.getElementById("btnExitBuilding");
+      if (btnExit) btnExit.addEventListener("click", exitBuilding);
+      document.getElementById("btnMoveFwd").addEventListener("click", () => { SoundEngine.tap(); movePlayer(0.7, 0, 0); });
+      document.getElementById("btnMoveBack").addEventListener("click", () => { SoundEngine.tap(); movePlayer(-0.7, 0, 0); });
+      document.getElementById("btnTurnLeft").addEventListener("click", () => { SoundEngine.tap(); movePlayer(0, 0, -0.35); });
+      document.getElementById("btnTurnRight").addEventListener("click", () => { SoundEngine.tap(); movePlayer(0, 0, 0.35); });
+
+      // 装飾品フィルタ＆ページングイベント
+      document.getElementById("decorCatSelect").addEventListener("change", (e) => { appState.decorCatFilter = e.target.value; appState.decorPage = 0; saveState(); renderAll(); });
+      document.getElementById("decorSearchInput").addEventListener("input", (e) => { appState.decorSearch = e.target.value; appState.decorPage = 0; saveState(); renderAll(); });
+      document.getElementById("btnDecorPrev").addEventListener("click", () => { SoundEngine.tap(); appState.decorPage = Math.max(0, appState.decorPage - 1); saveState(); renderAll(); });
+      document.getElementById("btnDecorNext").addEventListener("click", () => { SoundEngine.tap(); appState.decorPage = Math.min(decorTotalPages - 1, appState.decorPage + 1); saveState(); renderAll(); });
+      container.querySelectorAll("[data-did]").forEach((el) => el.addEventListener("click", () => { SoundEngine.tap(); appState.selectedDecorId = el.dataset.did; saveState(); renderAll(); }));
+
+      document.getElementById("btnPlaceFurn").addEventListener("click", placeFurnitureInFront);
+      document.getElementById("btnRotateFurn").addEventListener("click", rotateLastFurniture);
+      document.getElementById("btnRemoveFurn").addEventListener("click", removeLastFurniture);
+
+      // 建築物フィルタ＆ページングイベント
+      document.getElementById("archCatSelect").addEventListener("change", (e) => { appState.archCatFilter = e.target.value; appState.archPage = 0; saveState(); renderAll(); });
+      document.getElementById("archSearchInput").addEventListener("input", (e) => { appState.archSearch = e.target.value; appState.archPage = 0; saveState(); renderAll(); });
+      document.getElementById("btnArchPrev").addEventListener("click", () => { SoundEngine.tap(); appState.archPage = Math.max(0, appState.archPage - 1); saveState(); renderAll(); });
+      document.getElementById("btnArchNext").addEventListener("click", () => { SoundEngine.tap(); appState.archPage = Math.min(archTotalPages - 1, appState.archPage + 1); saveState(); renderAll(); });
+      container.querySelectorAll("[data-build]").forEach((b) => b.addEventListener("click", () => buildArchitecture(b.dataset.build)));
+      container.querySelectorAll("[data-enter]").forEach((b) => b.addEventListener("click", () => enterBuilding(b.dataset.enter)));
+    }
+
+    function renderSocialAndBoardView(container) {
+      const currentBoard = BOARD_GAMES_8.find((g) => g.id === appState.selectedBoardGame) || BOARD_GAMES_8[0];
+
+      container.innerHTML = `
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">💬 フレンドチャット・100種スタンプ・翻訳</h2>
+            <span class="sub-chip">全100種スタンプ</span>
+          </div>
+          <div class="chat-box">
+            <div style="display:flex;gap:6px;margin-bottom:7px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:11px;font-weight:800;">翻訳先：</span>
+              <select id="langSelect" style="padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;">
+                <option value="en" ${appState.targetLang === "en" ? "selected" : ""}>英語（EN）</option>
+                <option value="zh" ${appState.targetLang === "zh" ? "selected" : ""}>中国語（ZH）</option>
+                <option value="ko" ${appState.targetLang === "ko" ? "selected" : ""}>韓国語（KO）</option>
+                <option value="es" ${appState.targetLang === "es" ? "selected" : ""}>スペイン語（ES）</option>
+                <option value="fr" ${appState.targetLang === "fr" ? "selected" : ""}>フランス語（FR）</option>
+              </select>
+              <button class="mini-toggle" id="btnToggleAutoTr">${appState.autoTranslate ? "🌐 翻訳表示：ON" : "🌐 翻訳表示：OFF"}</button>
+            </div>
+            <div class="chat-messages">
+              ${appState.chatMessages.map((m) => `
+                <div class="msg-bubble">
+                  <div class="msg-meta"><span>${m.sender}</span><span>${m.time}</span></div>
+                  <div>${m.text}</div>
+                  ${appState.autoTranslate && m.translated ? `<div style="font-size:11px;color:var(--accent-sky);margin-top:2px;">${m.translated}</div>` : ""}
+                </div>
+              `).join("")}
+            </div>
+            <div class="typing-row" style="margin-bottom:6px;">
+              <input type="text" class="typing-input" id="chatInput" placeholder="フレンドにメッセージを送る..." />
+              <button class="btn-primary" id="btnSendChat">送信</button>
+            </div>
+            <div style="font-size:10.5px;font-weight:800;color:var(--ink-muted);">100種スタンプ（タップで送信）：</div>
+            <div class="stamp-grid">
+              ${STAMPS_100.map((st) => `<button class="stamp-btn" data-stamp="${st.label}">${st.label}</button>`).join("")}
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">♟️ 特殊ルール付きボードゲーム（全8種）</h2>
+            <button class="btn-sky" id="btnOpenRulebook">📘 ルールブック</button>
+          </div>
+          <div class="mode-tabs">
+            ${BOARD_GAMES_8.map((g) => `<button class="mode-pill ${appState.selectedBoardGame === g.id ? "active" : ""}" data-bg="${g.id}">${g.name.split("（")[0]}</button>`).join("")}
+          </div>
+          <div style="font-size:12px;font-weight:800;margin-bottom:4px;">${currentBoard.name} — 手番：${appState.boardTurn}</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;">特殊ルール：${currentBoard.special}</div>
+          <div class="board-grid">
+            ${appState.boardCells.map((val, idx) => {
+              const r = Math.floor(idx / 8), c = idx % 8;
+              const isDark = (r + c) % 2 === 1;
+              return `<button class="board-cell ${isDark ? "dark" : ""}" data-cell="${idx}">${val}</button>`;
+            }).join("")}
+          </div>
+          <button class="mini-toggle" id="btnResetBoard">🔄 盤面をリセット</button>
+        </section>
+      `;
+
+      document.getElementById("langSelect").addEventListener("change", (e) => { appState.targetLang = e.target.value; saveState(); renderAll(); });
+      document.getElementById("btnToggleAutoTr").addEventListener("click", () => { SoundEngine.tap(); appState.autoTranslate = !appState.autoTranslate; saveState(); renderAll(); });
+      document.getElementById("btnSendChat").addEventListener("click", () => {
+        const inp = document.getElementById("chatInput");
+        const txt = (inp.value || "").trim();
+        if (!txt) return;
+        SoundEngine.candy();
+        appState.chatMessages.push({ sender: "あなた", text: txt, translated: translateSample(txt, appState.targetLang), time: "今" });
+        saveState(); renderAll();
+      });
+      container.querySelectorAll("[data-stamp]").forEach((b) => b.addEventListener("click", () => {
+        SoundEngine.candy();
+        appState.chatMessages.push({ sender: "あなた", text: `スタンプ：${b.dataset.stamp}`, translated: translateSample(b.dataset.stamp, appState.targetLang), time: "今" });
+        saveState(); renderAll();
+      }));
+      container.querySelectorAll("[data-bg]").forEach((b) => b.addEventListener("click", () => { SoundEngine.tap(); appState.selectedBoardGame = b.dataset.bg; saveState(); renderAll(); }));
+      container.querySelectorAll("[data-cell]").forEach((b) => b.addEventListener("click", () => {
+        const idx = Number(b.dataset.cell);
+        if (appState.boardCells[idx]) return;
+        SoundEngine.tap();
+        appState.boardCells[idx] = appState.boardTurn.startsWith("先手") ? "🌿" : "⭐";
+        appState.boardTurn = appState.boardTurn.startsWith("先手") ? "後手（⭐）" : "先手（🌿）";
+        saveState(); renderAll();
+      }));
+      document.getElementById("btnResetBoard").addEventListener("click", () => { SoundEngine.tap(); appState.boardCells = Array(64).fill(""); appState.boardTurn = "先手（🌿）"; saveState(); renderAll(); });
+      document.getElementById("btnOpenRulebook").addEventListener("click", () => {
+        SoundEngine.tap();
+        document.getElementById("modalTitle").textContent = "📘 ボードゲーム＆特殊ルールブック（全8種）";
+        document.getElementById("modalBody").innerHTML = BOARD_GAMES_8.map((g) => `
+          <div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(0,0,0,0.14);">
+            <strong>${g.name}</strong><br/><span>特殊ルール：${g.special}</span>
+          </div>
+        `).join("");
+        document.getElementById("detailModal").classList.add("open");
+      });
+    }
+
+    function renderShopAndGachaView(container) {
+      container.innerHTML = `
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">✨ 森の10連ガチャ</h2>
+            <span class="sub-chip">10連：500コトマネー</span>
+          </div>
+          <p style="font-size:12px;margin:0 0 8px;">10連で勉強飴×10・努力値ブースト・全1,000種装飾を獲得！</p>
+          <button class="btn-gold" id="btnPull10" style="width:100%;">🌟 10連ガチャを引く（500コトマネー）</button>
+          ${appState.lastGachaPulls.length ? `
+            <div class="gacha-results">
+              ${appState.lastGachaPulls.map((r) => `<div class="gacha-card">${r}</div>`).join("")}
+            </div>
+          ` : ""}
+        </section>
+
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">🛒 コトマネー専用ショップ（指紋認証決済）</h2>
+            <span class="sub-chip">完全ゲーム内通貨</span>
+          </div>
+          <p style="font-size:12px;margin:0;">勉強飴5個セット（200コトマネー）を、指紋センサー長押し認証＆決済サウンドで購入できます。</p>
+          <div class="fingerprint-zone">
+            <div style="font-size:11.5px;font-weight:800;margin-bottom:8px;">👆 指紋マークを長押し（0.7秒）して購入認証</div>
+            <button class="fp-btn" id="btnFingerprintPay">🫆</button>
+            <div id="fpStatus" style="font-size:11px;font-weight:800;margin-top:8px;color:var(--accent-sky);">待機中</div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="card-title-row">
+            <h2 class="card-title">🚧 近日公開（Coming Soon）</h2>
+            <span class="sub-chip">拡張スロット</span>
+          </div>
+          <p style="font-size:12px;color:var(--ink-muted);margin:0;">季節イベント・追加コトモン・新ワールド拡張エリアを順次追加予定！</p>
+        </section>
+      `;
+
+      document.getElementById("btnPull10").addEventListener("click", pullTenGacha);
+      const fpBtn = document.getElementById("btnFingerprintPay");
+      const fpStatus = document.getElementById("fpStatus");
+      let holdTimer = null;
+
+      const startHold = () => {
+        if (appState.money < 200) { SoundEngine.wrong(); fpStatus.textContent = "コトマネー不足（200必要）"; return; }
+        fpBtn.classList.add("scanning");
+        fpStatus.textContent = "指紋スキャン中...";
+        holdTimer = setTimeout(() => {
+          appState.money -= 200; appState.candy += 5;
+          fpBtn.classList.remove("scanning"); SoundEngine.purchase();
+          fpStatus.textContent = "✅ 認証完了！勉強飴×5を獲得しました";
+          showToast("🍬 勉強飴×5を購入しました！");
+          saveState(); renderAll();
+        }, 700);
+      };
+      const cancelHold = () => { clearTimeout(holdTimer); fpBtn.classList.remove("scanning"); };
+      fpBtn.addEventListener("pointerdown", startHold);
+      fpBtn.addEventListener("pointerup", cancelHold);
+      fpBtn.addEventListener("pointerleave", cancelHold);
+    }
+
+    function renderAll() {
+      renderHeader();
+      const main = document.getElementById("mainView");
+      document.querySelectorAll(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.tab === appState.activeTab));
+      if (appState.activeTab === "dex") renderDexView(main);
+      else if (appState.activeTab === "battle") renderBattleView(main);
+      else if (appState.activeTab === "camp") renderCampView(main);
+      else if (appState.activeTab === "social") renderSocialAndBoardView(main);
+      else renderShopAndGachaView(main);
+    }
+
+    document.getElementById("btnReplaySplash").addEventListener("click", () => { SoundEngine.tap(); runSplashSequence(); });
+    document.getElementById("btnSound").addEventListener("click", () => { const on = SoundEngine.toggle(); renderHeader(); showToast(on ? "サウンド ON" : "サウンド OFF"); });
+    document.getElementById("btnCloseModal").addEventListener("click", () => { SoundEngine.tap(); document.getElementById("detailModal").classList.remove("open"); });
+    document.getElementById("detailModal").addEventListener("click", (e) => { if (e.target.id === "detailModal") document.getElementById("detailModal").classList.remove("open"); });
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        SoundEngine.tap();
+        appState.activeTab = item.dataset.tab;
+        if (appState.activeTab === "battle" && !currentQuestion) startBattle();
+        saveState(); renderAll();
+      });
+    });
+
+    runSplashSequence();
+    renderAll();
+    requestAnimationFrame(campLoop);
+  </script>
+</body>
+</html>
